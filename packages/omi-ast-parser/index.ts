@@ -22,7 +22,7 @@ export interface ServiceTree {
   name: string;
   items: FunctionTree[];
 }
-type AST = VariableTree | StructTree | FunctionTree | ServiceTree;
+export type AST = VariableTree | StructTree | FunctionTree | ServiceTree;
 
 enum Status {
   Init = 1,
@@ -60,17 +60,17 @@ class Parser {
   wKeyword(word: string) {
     if (word === "struct") {
       const astNode = this.wStruct({});
-      console.log(astNode);
+      // console.log(astNode);
       return astNode;
     }
     if (word === "service") {
       const astNode = this.wService({});
-      console.log(astNode);
+      // console.log(astNode);
       return astNode;
     }
     if (!word.length) {
       // 已经到头了
-      console.log("文件解析完毕");
+      // console.log("文件解析完毕");
       this.status = Status.Fulfilled;
       return null;
     }
@@ -183,6 +183,7 @@ class Parser {
         this.tree.push(ast);
       }
     }
+    return this.tree;
   }
 
   errorChecker() {

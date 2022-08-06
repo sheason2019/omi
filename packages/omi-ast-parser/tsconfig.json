@@ -4,6 +4,7 @@
     "module": "commonjs" /* Specify what module code is generated. */,
     "rootDir": ".",
     "outDir": "./dist",
+    "declaration": true,
     /* Emit */
     // "declaration": true,                              /* Generate .d.ts files from TypeScript and JavaScript files in your project. */
     // "declarationMap": true,                           /* Create sourcemaps for d.ts files. */
@@ -60,5 +61,6 @@
     /* Completeness */
     // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
-  }
+  },
+  "exclude": ["./**/*.test.ts", "./dist/**/*.ts"]
 }

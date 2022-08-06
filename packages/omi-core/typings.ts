@@ -7,7 +7,7 @@ export type OmiLambda<Props extends any, Response extends any> = (
 ) => Response | Promise<Response>;
 
 export abstract class BasicOmiController {
-  [key: string]: OmiLambda<any, any>;
+  abstract namespace: string;
 }
 
 interface IOmiErrorConstructProps {

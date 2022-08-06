@@ -23,20 +23,26 @@ const patchMethod = (name: string): Method | null => {
 const registController = <T extends BasicOmiController>(
   serviceImpl: T,
   method: Method,
-  functionName: keyof T,
+  functionName: string,
   router: Router
 ) => {
   if (typeof functionName !== "string") {
     return;
   }
-  const path = `/${serviceImpl.constructor.name.replace(
-    "Controller",
-    ""
-  )}.${functionName.replace(method, "")}`;
+  const path = `/${serviceImpl.namespace}.${functionName.replace(method, "")}`;
   console.log(`[注册路由] Method: ${method} Path: ${path}`);
 
+  const lambda = (serviceImpl as any)[functionName] as unknown as OmiLambda<
+    any,
+    any
+  >;
+  if (typeof lambda !== "function") {
+    throw new Error(
+      `在${serviceImpl.constructor.name}内声明的lambda不是有效的函数`
+    );
+  }
   const func: IMiddleware = async (ctx, next) => {
-    const value = await serviceImpl[functionName](ctx);
+    const value = await lambda(ctx);
     ctx.body = value;
     await next();
   };
@@ -64,6 +70,8 @@ const registController = <T extends BasicOmiController>(
 };
 
 class HelloController extends BasicOmiController {
+  namespace: string = "Hello";
+
   GetHello: OmiLambda<null, string> = async ({ props }) => {
     return "hello";
   };
@@ -80,7 +88,6 @@ const serviceImpl = new HelloController();
 
 const keys = Object.keys(serviceImpl);
 
-console.log(keys);
 for (const key of keys) {
   const method = patchMethod(key);
   if (method) {
