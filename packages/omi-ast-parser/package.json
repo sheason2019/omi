@@ -1,10 +1,11 @@
 {
   "name": "omi-ast-parser",
-  "version": "1.0.0",
-  "main": "index.js",
+  "version": "0.1.0",
+  "main": "index.ts",
   "license": "MIT",
   "scripts": {
-    "dev": "ts-node index.ts"
+    "dev": "ts-node index.ts",
+    "test": "ts-node index.test.ts"
   },
   "dependencies": {
     "ts-node": "^10.9.1"

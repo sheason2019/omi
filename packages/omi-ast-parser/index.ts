@@ -1,4 +1,4 @@
-interface VariableTree {
+export interface VariableTree {
   // 类型：变量
   type: "variable";
   // 变量名称
@@ -6,18 +6,18 @@ interface VariableTree {
   // 变量的数据类型
   format: string;
 }
-interface StructTree {
+export interface StructTree {
   type: "struct";
   name: string;
   items: VariableTree[];
 }
-interface FunctionTree {
+export interface FunctionTree {
   type: "function";
   name: string;
   requestArguments: VariableTree[];
   responseType: string;
 }
-interface ServiceTree {
+export interface ServiceTree {
   type: "service";
   name: string;
   items: FunctionTree[];
@@ -32,8 +32,6 @@ enum Status {
 
 // parser负责把文本编译成AST
 const splitChar = [" ", "\n", "(", ")", "{", "}", ";", ","];
-// 关键字列表
-const keywordList = ["struct", "service"];
 
 class Parser {
   constructor() {
@@ -232,20 +230,4 @@ class Parser {
   }
 }
 
-const testContent = `struct Model {
-  string test;
-}
-
-service Test {
-  string Hello(Model m);
-}
-`;
-
-const parser = new Parser();
-
-parser.setContent(testContent);
-try {
-  parser.build();
-} catch (e) {
-  console.error(e);
-}
+export default Parser;

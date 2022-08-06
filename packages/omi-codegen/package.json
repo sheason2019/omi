@@ -1,0 +1,13 @@
+{
+  "name": "omi-codegen",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "dev": "ts-node index.ts"
+  },
+  "dependencies": {
+    "omi-ast-parser": "0.1.0",
+    "ts-node": "^10.9.1"
+  }
+}
