@@ -1,0 +1,7 @@
+class Model {
+  string test;
+}
+
+service Test {
+  string Hello(Model m);
+}
