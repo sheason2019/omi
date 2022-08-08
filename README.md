@@ -212,7 +212,7 @@ server.listen(8080);
 
 而在一些地方，OmiServer 做的又更加激进一点，比如 Controller 内部的方法名必须以`method`+路由的形式进行命名，同时 Controller 内部必须维护一个 namespace 字符串（这个通常由 Codegen 自动生成，只有在不使用 Codegen 的情况下才需要手动声明 namespace）。
 
-做好了这些准备工作以后，OmiServer 会在执行 Build 方法的时候去逐个实例化已使用 append 向它声明的 Controller 类（其实就是做了个控制反转），然后从实例化的 Controller 类里面逐个去获取方法名，并将其解析为 gRPC 风格的 url，如：`http://localhost:/Todo.TodoList`，这也就是为什么在 Controller 里必须以箭头函数的形式来声明函数，因为直接以 nestjs 风格声明的函数似乎不是直接挂载在类的实例上的，会导致 OmiServer 拿不到对应的方法名，最终导致无法声明路由。
+做好了这些准备工作以后，OmiServer 会在执行 Build 方法的时候去逐个实例化已使用 append 向它声明的 Controller 类（其实就是做了个控制反转），然后从实例化的 Controller 类里面逐个去获取方法名，并将其解析为 gRPC 风格的 url，如：`http://localhost/Todo.TodoList`，这也就是为什么在 Controller 里必须以箭头函数的形式来声明函数，因为直接以 nestjs 风格声明的函数似乎不是直接挂载在类的实例上的，会导致 OmiServer 拿不到对应的方法名，最终导致无法声明路由。
 
 而在上面这个 Controller 的实现中，可以注意到每个实现的参数都是`({ props })`，这是因为在 OmiServer 里定义了一个中间件，把 Get 和 Post 类型的请求参数统统合并到了`ctx.props`这个对象中，以简化获取参数的步骤，所以，在 Controller 内声明的方法的参数其实都是 ctx 本身，这是值得注意的一点。
 
