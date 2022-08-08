@@ -1,9 +1,9 @@
 /**
  * 本文件由Omi.js自动生成，请勿随意改动
- * 生成时间：2022年8月8日 23:45:2.
+ * 生成时间：2022年8月9日 0:7:27.
  */
 
-import { OmiLambda } from "omi-server";
+import { OmiServerCtx } from "omi-server";
 
 export interface Todo {
   content: string;
@@ -12,16 +12,14 @@ export interface Todo {
 }
 export abstract class UnimpledTodoController {
   namespace: string = "Todo";
-  abstract GetTodoList(
-    ...args: Parameters<OmiLambda<{}, Todo[]>>
-  ): ReturnType<OmiLambda<{}, Todo[]>>;
-  abstract PostTodo(
-    ...args: Parameters<OmiLambda<{ todo: Todo }, void>>
-  ): ReturnType<OmiLambda<{ todo: Todo }, void>>;
-  abstract PutTodo(
-    ...args: Parameters<OmiLambda<{ todo: Todo }, void>>
-  ): ReturnType<OmiLambda<{ todo: Todo }, void>>;
-  abstract DeleteTodo(
-    ...args: Parameters<OmiLambda<{ todo: Todo }, void>>
-  ): ReturnType<OmiLambda<{ todo: Todo }, void>>;
+  abstract GetTodoList({ props }: OmiServerCtx<{}>): Promise<Todo[]> | Todo[];
+  abstract PostTodo({
+    props,
+  }: OmiServerCtx<{ todo: Todo }>): Promise<void> | void;
+  abstract PutTodo({
+    props,
+  }: OmiServerCtx<{ todo: Todo }>): Promise<void> | void;
+  abstract DeleteTodo({
+    props,
+  }: OmiServerCtx<{ todo: Todo }>): Promise<void> | void;
 }

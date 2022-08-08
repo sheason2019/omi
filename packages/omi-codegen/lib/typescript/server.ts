@@ -8,10 +8,9 @@ import {
 } from "./common";
 
 const generateFunction = (ast: FunctionTree) => {
-  const lambdaType = `OmiLambda<${generateArgumentsType(
-    ast.requestArguments
-  )}, ${responseType(ast.response)}>`;
-  return `abstract ${ast.name}(...args: Parameters<${lambdaType}>): ReturnType<${lambdaType}>;`;
+  const resp = responseType(ast.response);
+  const args = generateArgumentsType(ast.requestArguments);
+  return `abstract ${ast.name}({ props }: OmiServerCtx<${args}>): Promise<${resp}> | ${resp};`;
 };
 
 const generateService = (ast: ServiceTree): string => {
@@ -29,7 +28,7 @@ const ServerGenerator = (ast: AST[]): string => {
   const content: string[] = [];
   content.push(staticComment);
   content.push("");
-  content.push(`import { OmiLambda } from 'omi-server';`);
+  content.push(`import { OmiServerCtx } from 'omi-server';`);
   content.push("");
   for (const item of ast) {
     if (item.type === "struct") {

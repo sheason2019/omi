@@ -4,11 +4,14 @@ import { Todo, UnimpledTodoController } from "./api-lib/todo-server";
 const todos: Todo[] = [];
 
 class TodoController extends UnimpledTodoController {
-  async PostTodo({ props }: OmiServerCtx<{ todo: Todo }>): Promise<void> {
+  GetTodoList({ props }: OmiServerCtx<{}>): Todo[] | Promise<Todo[]> {
+    return todos;
+  }
+  PostTodo({ props }: OmiServerCtx<{ todo: Todo }>): void | Promise<void> {
     const { todo } = props;
     todos.push(todo);
   }
-  async PutTodo({ props }: OmiServerCtx<{ todo: Todo }>): Promise<void> {
+  PutTodo({ props }: OmiServerCtx<{ todo: Todo }>): void | Promise<void> {
     const { todo } = props;
     for (const i in todos) {
       if (todos[i].createTime === todo.createTime) {
@@ -17,7 +20,7 @@ class TodoController extends UnimpledTodoController {
       }
     }
   }
-  async DeleteTodo({ props }: OmiServerCtx<{ todo: Todo }>): Promise<void> {
+  DeleteTodo({ props }: OmiServerCtx<{ todo: Todo }>): void | Promise<void> {
     const { todo } = props;
     for (let i = 0; i < todos.length; i++) {
       if (todos[i].createTime === todo.createTime) {
@@ -25,9 +28,6 @@ class TodoController extends UnimpledTodoController {
         break;
       }
     }
-  }
-  async GetTodoList(ctx: OmiServerCtx<{}>): Promise<Todo[]> {
-    return todos;
   }
 }
 
