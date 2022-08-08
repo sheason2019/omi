@@ -89,7 +89,7 @@ export class OmiServer {
     for (const Controller of this.controllers) {
       const serviceImpl = new Controller();
 
-      const keys = Object.keys(serviceImpl);
+      const keys = Object.keys(Object.getPrototypeOf(serviceImpl));
 
       for (const key of keys) {
         const method = patchMethod(key);

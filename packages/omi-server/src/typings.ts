@@ -1,10 +1,16 @@
 import Koa from "koa";
 
+export type OmiServerCtx<Props extends any> = Koa.ParameterizedContext<
+  Koa.DefaultState,
+  Koa.DefaultContext,
+  any
+> & {
+  props: Props;
+};
+
 export type OmiLambda<Props extends any, Response extends any> = (
-  ctx: Koa.ParameterizedContext<Koa.DefaultState, Koa.DefaultContext, any> & {
-    props: Props;
-  }
-) => Response | Promise<Response>;
+  ctx: OmiServerCtx<Props>
+) => Promise<Response>;
 
 export abstract class BasicOmiController {
   abstract namespace: string;
