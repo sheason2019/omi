@@ -1,5 +1,5 @@
-import { BasicOmiController, OmiLambda } from "../../dist";
-import { OmiMiddleware, Use } from "../decorator";
+import { BasicOmiController, OmiLambda } from "../dist";
+import { OmiMiddleware, Use } from "../src/decorator";
 
 const middlewareA: OmiMiddleware<any, any> = async (
   ctx,

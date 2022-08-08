@@ -8,9 +8,10 @@ import {
 } from "./common";
 
 const generateFunction = (ast: FunctionTree) => {
-  return `abstract ${ast.name}: OmiLambda<${generateArgumentsType(
+  const lambdaType = `OmiLambda<${generateArgumentsType(
     ast.requestArguments
-  )}, ${responseType(ast.response)}>;`;
+  )}, ${responseType(ast.response)}>`;
+  return `abstract ${ast.name}(...args: Parameters<${lambdaType}>): ReturnType<${lambdaType}>;`;
 };
 
 const generateService = (ast: ServiceTree): string => {
