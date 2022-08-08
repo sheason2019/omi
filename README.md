@@ -214,7 +214,7 @@ server.listen(8080);
 
 做好了这些准备工作以后，OmiServer 会在执行 Build 方法的时候去逐个实例化已使用 append 向它声明的 Controller 类（其实就是做了个控制反转），然后从实例化的 Controller 类里面逐个去获取方法名，并将其解析为 gRPC 风格的 url，如：`http://localhost/Todo.TodoList`，这也就是为什么在 Controller 里必须以箭头函数的形式来声明函数，因为直接以 nestjs 风格声明的函数似乎不是直接挂载在类的实例上的，会导致 OmiServer 拿不到对应的方法名，最终导致无法声明路由。
 
-而在上面这个 Controller 的实现中，可以注意到每个实现的参数都是`({ props })`，这是因为在 OmiServer 里定义了一个中间件，把 Get 和 Post 类型的请求参数统统合并到了`ctx.props`这个对象中，以简化获取参数的步骤，所以，在 Controller 内声明的方法的参数其实都是 ctx 本身，这是值得注意的一点。
+而在上面这个 Controller 的实现中，可以注意到每个方法的参数都是`({ props })`，这是因为在 OmiServer 里定义了一个中间件，把 Get 和 Post 类型的请求参数统统合并到了`ctx.props`这个对象中，以简化获取参数的步骤，所以，在 Controller 内声明的方法的参数其实都是 ctx 本身，这是值得注意的一点。
 
 同样的，受到工期制约，OmiServer 目前的实现也很不完全，它目前还没有中间件的能力，这算是很致命的一个缺陷了，我目前的想法是使用装饰器来实现（Nest.js？老东西等着爆金币吧。），期望的语法应该是像下面这样的：
 
@@ -237,5 +237,16 @@ class ExampleController extends UmimpledExampleController {
 写成这样一方面是因为这个项目仍处在 Demo 阶段，都完全没有成型，我贸然去写一篇煞有其事的说明书感觉用途也不大；而另一方面，则是我自己也有点混乱，不知道该怎么把 Omi 的全貌给表达出来。
 
 所以这里我就干脆写了个 Todo Example，直接用最淳朴的代码来展示一下怎么用这个框架吧。
+
+在项目路径下执行以下命令以初始化 example 项目：
+
+```sh
+# 安装依赖包
+$ yarn
+# 初始化内部依赖
+$ lerna run build
+```
+
+然后进入 omi-example-server 和 omi-example-web 项目，分别执行`yarn dev`启动项目即可。
 
 查看`packages`目录下的`omi-example-*`项目，尝试修改`omi-example-idl`的内容，并在`omi-example-server`或`omi-example-web`中执行`yarn idl`命令，即可实现接口的迭代和同步。
