@@ -123,7 +123,7 @@ export class TodoClient extends OmiClientBase {
 
 /**
  * 本文件由Omi.js自动生成，请勿随意改动
- * 生成时间：2022年8月8日 11:37:40.
+ * 生成时间：2022年8月8日 23:45:2.
  */
 
 import { OmiLambda } from "omi-server";
@@ -135,10 +135,18 @@ export interface Todo {
 }
 export abstract class UnimpledTodoController {
   namespace: string = "Todo";
-  abstract GetTodoList: OmiLambda<{}, Todo[]>;
-  abstract PostTodo: OmiLambda<{ todo: Todo }, void>;
-  abstract PutTodo: OmiLambda<{ todo: Todo }, void>;
-  abstract DeleteTodo: OmiLambda<{ todo: Todo }, void>;
+  abstract GetTodoList(
+    ...args: Parameters<OmiLambda<{}, Todo[]>>
+  ): ReturnType<OmiLambda<{}, Todo[]>>;
+  abstract PostTodo(
+    ...args: Parameters<OmiLambda<{ todo: Todo }, void>>
+  ): ReturnType<OmiLambda<{ todo: Todo }, void>>;
+  abstract PutTodo(
+    ...args: Parameters<OmiLambda<{ todo: Todo }, void>>
+  ): ReturnType<OmiLambda<{ todo: Todo }, void>>;
+  abstract DeleteTodo(
+    ...args: Parameters<OmiLambda<{ todo: Todo }, void>>
+  ): ReturnType<OmiLambda<{ todo: Todo }, void>>;
 }
 ```
 
@@ -171,7 +179,11 @@ const todos: Todo[] = [];
 
 // 用户实际编写的内容
 class TodoController extends UnimpledTodoController {
-  PutTodo: OmiLambda<{ todo: Todo }, void> = ({ props }) => {
+  async PostTodo({ props }: OmiServerCtx<{ todo: Todo }>): Promise<void> {
+    const { todo } = props;
+    todos.push(todo);
+  }
+  async PutTodo({ props }: OmiServerCtx<{ todo: Todo }>): Promise<void> {
     const { todo } = props;
     for (const i in todos) {
       if (todos[i].createTime === todo.createTime) {
@@ -179,8 +191,8 @@ class TodoController extends UnimpledTodoController {
         break;
       }
     }
-  };
-  DeleteTodo: OmiLambda<{ todo: Todo }, void> = ({ props }) => {
+  }
+  async DeleteTodo({ props }: OmiServerCtx<{ todo: Todo }>): Promise<void> {
     const { todo } = props;
     for (let i = 0; i < todos.length; i++) {
       if (todos[i].createTime === todo.createTime) {
@@ -188,15 +200,10 @@ class TodoController extends UnimpledTodoController {
         break;
       }
     }
-  };
-  GetTodoList: OmiLambda<{}, Todo[]> = ({ props }) => {
+  }
+  async GetTodoList(ctx: OmiServerCtx<{}>): Promise<Todo[]> {
     return todos;
-  };
-
-  PostTodo: OmiLambda<{ todo: Todo }, void> = ({ props }) => {
-    const { todo } = props;
-    todos.push(todo);
-  };
+  }
 }
 
 // 将Controller Serve起来的声明
@@ -212,9 +219,9 @@ server.listen(8080);
 
 而在一些地方，OmiServer 做的又更加激进一点，比如 Controller 内部的方法名必须以`method`+路由的形式进行命名，同时 Controller 内部必须维护一个 namespace 字符串（这个通常由 Codegen 自动生成，只有在不使用 Codegen 的情况下才需要手动声明 namespace）。
 
-做好了这些准备工作以后，OmiServer 会在执行 Build 方法的时候去逐个实例化已使用 append 向它声明的 Controller 类（其实就是做了个控制反转），然后从实例化的 Controller 类里面逐个去获取方法名，并将其解析为 gRPC 风格的 url，如：`http://localhost/Todo.TodoList`，这也就是为什么在 Controller 里必须以箭头函数的形式来声明函数，因为直接以 nestjs 风格声明的函数似乎不是直接挂载在类的实例上的，会导致 OmiServer 拿不到对应的方法名，最终导致无法声明路由。
+做好了这些准备工作以后，OmiServer 会在执行 Build 方法的时候去逐个实例化已使用 append 向它声明的 Controller 类（其实就是做了个控制反转），然后从实例化的 Controller 类里面逐个去获取方法名，并将其解析为 gRPC 风格的 url，如：`http://localhost/Todo.TodoList`。
 
-而在上面这个 Controller 的实现中，可以注意到每个方法的参数都是`({ props })`，这是因为在 OmiServer 里定义了一个中间件，把 Get 和 Post 类型的请求参数统统合并到了`ctx.props`这个对象中，以简化获取参数的步骤，所以，在 Controller 内声明的方法的参数其实都是 ctx 本身，这是值得注意的一点。
+同时，在上面这个 Controller 的实现中，可以注意到每个方法的参数都是`({ props })`，这是因为在 OmiServer 里定义了一个中间件，把 Get 和 Post 类型的请求参数统统合并到了`ctx.props`这个对象中，以简化获取参数的步骤，所以，在 Controller 内声明的方法的参数其实都是 ctx 本身，这是值得注意的一点。
 
 同样的，受到工期制约，OmiServer 目前的实现也很不完全，它目前还没有中间件的能力，这算是很致命的一个缺陷了，我目前的想法是使用装饰器来实现（Nest.js？老东西等着爆金币吧。），期望的语法应该是像下面这样的：
 
