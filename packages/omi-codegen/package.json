@@ -5,7 +5,8 @@
   "license": "MIT",
   "scripts": {
     "dev": "ts-node index.ts",
-    "test": "ts-node lib/typescript/index.test.ts"
+    "test": "ts-node lib/typescript/index.test.ts",
+    "build": "tsc"
   },
   "dependencies": {
     "@types/prettier": "^2.7.0",

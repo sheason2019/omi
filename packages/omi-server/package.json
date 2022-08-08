@@ -4,7 +4,8 @@
   "main": "dist/index.js",
   "license": "MIT",
   "scripts": {
-    "dev": "ts-node index.ts"
+    "dev": "ts-node index.ts",
+    "build": "tsc"
   },
   "dependencies": {
     "@types/koa": "^2.13.5",

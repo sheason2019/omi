@@ -5,7 +5,8 @@
   "license": "MIT",
   "scripts": {
     "idl": "ts-node codegen.ts",
-    "dev": "ts-node index.ts"
+    "dev": "ts-node index.ts",
+    "build": "tsc"
   },
   "dependencies": {
     "omi-client": "^1.0.0",
