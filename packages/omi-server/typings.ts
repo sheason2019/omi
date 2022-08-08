@@ -2,7 +2,7 @@ import Koa from "koa";
 
 export type OmiLambda<Props extends any, Response extends any> = (
   ctx: Koa.ParameterizedContext<Koa.DefaultState, Koa.DefaultContext, any> & {
-    props?: Props;
+    props: Props;
   }
 ) => Response | Promise<Response>;
 

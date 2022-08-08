@@ -1,3 +1,5 @@
+const methods = ["Get", "Post", "Put", "Delete", "Patch"] as const;
+type Method = typeof methods[number];
 export interface VariableTree {
   // 类型：变量
   type: "variable";
@@ -5,6 +7,8 @@ export interface VariableTree {
   name: string;
   // 变量的数据类型
   format: string;
+  // 是否是数组类型
+  repeated: boolean;
 }
 export interface StructTree {
   type: "struct";
@@ -14,8 +18,9 @@ export interface StructTree {
 export interface FunctionTree {
   type: "function";
   name: string;
+  method: Method;
   requestArguments: VariableTree[];
-  responseType: string;
+  response: VariableTree;
 }
 export interface ServiceTree {
   type: "service";
@@ -41,6 +46,7 @@ class Parser {
     this.formatMap.set("double", {});
     this.formatMap.set("string", {});
     this.formatMap.set("boolean", {});
+    this.formatMap.set("void", {});
   }
 
   index: number = 0;
@@ -77,23 +83,27 @@ class Parser {
     throw new Error("解析到了未经定义的关键字：" + word);
   }
 
-  wVariable(format: string, stopChars: string[]): VariableTree {
+  wVariable(variableStart: string, stopChars: string[]): VariableTree {
+    let format = variableStart;
+    let repeated = false;
+    let name = "";
+    if (variableStart === "repeated") {
+      repeated = true;
+      format = this.readWord();
+    }
     if (!this.formatMap.has(format)) {
       throw new Error("未经定义的数据类型：" + format);
     }
-    const varTree: Partial<VariableTree> = {
-      format,
-    };
-    const name = this.readWord();
-    varTree.name = name;
+    name = this.readWord();
     const stopChar = this.readWord();
     if (stopChars.indexOf(stopChar) === -1) {
       throw new Error("变量定义后必须有终止符");
     }
     return {
-      format: varTree.format!,
-      name: varTree.name!,
+      format,
+      name,
       type: "variable",
+      repeated,
     };
   }
 
@@ -121,17 +131,44 @@ class Parser {
     return args;
   }
 
-  wFunction(responseType: string): FunctionTree {
+  wParseMethod(name: string): Method {
+    for (let method of methods) {
+      if (name.indexOf(method) === 0) {
+        return method;
+      }
+    }
+    throw new Error(`无法识别函数名${name}的method`);
+  }
+
+  wFunction(start: string): FunctionTree {
+    let responseType = start;
+
+    const response: VariableTree = {
+      name: "",
+      type: "variable",
+      format: "",
+      repeated: false,
+    };
+    if (start === "repeated") {
+      response.repeated = true;
+      responseType = this.readWord();
+    }
     if (!this.formatMap.has(responseType)) {
       throw new Error("未经定义的数据类型：" + responseType);
     }
+    response.format = responseType;
+
     const name = this.readWord();
+
+    const method = this.wParseMethod(name);
+
     const requestArguments = this.wRequestArguments();
     return {
       type: "function",
       name,
       requestArguments,
-      responseType,
+      response,
+      method,
     };
   }
 

@@ -1,7 +1,7 @@
 {
-  "name": "omi-core",
+  "name": "omi-server",
   "version": "0.1.0",
-  "main": "index.js",
+  "main": "dist/index.js",
   "license": "MIT",
   "scripts": {
     "dev": "ts-node index.ts"

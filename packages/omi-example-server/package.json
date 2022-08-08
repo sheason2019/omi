@@ -1,0 +1,15 @@
+{
+  "name": "omi-example",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "idl": "ts-node codegen.ts",
+    "dev": "ts-node index.ts"
+  },
+  "dependencies": {
+    "omi-client": "^1.0.0",
+    "omi-codegen": "^1.0.0",
+    "omi-server": "^0.1.0"
+  }
+}

@@ -1,7 +1,10 @@
+declare const methods: readonly ["Get", "Post", "Put", "Delete", "Patch"];
+declare type Method = typeof methods[number];
 export interface VariableTree {
     type: "variable";
     name: string;
     format: string;
+    repeated: boolean;
 }
 export interface StructTree {
     type: "struct";
@@ -11,8 +14,9 @@ export interface StructTree {
 export interface FunctionTree {
     type: "function";
     name: string;
+    method: Method;
     requestArguments: VariableTree[];
-    responseType: string;
+    response: VariableTree;
 }
 export interface ServiceTree {
     type: "service";
@@ -34,9 +38,10 @@ declare class Parser {
     formatMap: Map<string, Partial<AST>>;
     setContent(content: string): void;
     wKeyword(word: string): StructTree | ServiceTree | null;
-    wVariable(format: string, stopChars: string[]): VariableTree;
+    wVariable(variableStart: string, stopChars: string[]): VariableTree;
     wRequestArguments(): VariableTree[];
-    wFunction(responseType: string): FunctionTree;
+    wParseMethod(name: string): Method;
+    wFunction(start: string): FunctionTree;
     wIntend(node: Partial<StructTree | ServiceTree>): Partial<StructTree | ServiceTree>;
     wStruct(node: Partial<StructTree>): StructTree;
     wService(node: Partial<ServiceTree>): ServiceTree;
