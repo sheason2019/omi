@@ -1,4 +1,5 @@
-import { OmiLambda, OmiServerCtx } from "./typings";
+import { BasicOmiController, OmiLambda, OmiServerCtx } from "./typings";
+import { getLambdas, packMiddleware } from "./utils";
 
 /**
  * @ctx Controller的Context
@@ -11,13 +12,6 @@ export type OmiMiddleware<Props extends any, ResponseType extends any> = (
   returnInterceptor: (val: ResponseType) => void
 ) => Promise<any>;
 
-// 这个Error class就不导出了，这个几乎是returnInterceptor专用的，我想不到手动调它的场景
-class MiddlewareReturnInterceptor extends Error {
-  constructor() {
-    super();
-  }
-}
-
 export function Use<Props extends any, ResponseType extends any>(
   middlewareOrMiddlewareList:
     | OmiMiddleware<Props, ResponseType>
@@ -25,57 +19,57 @@ export function Use<Props extends any, ResponseType extends any>(
 ) {
   type Lambda = OmiLambda<Props, ResponseType>;
 
-  return function (
+  function useMiddleware(
     target: any,
-    propertyKey: string,
-    descriptor: PropertyDescriptor
-  ) {
-    let lambda: Lambda = descriptor.value;
+    propertyKey?: string,
+    descriptor?: PropertyDescriptor
+  ): any {
     const middlewareStack: OmiMiddleware<Props, ResponseType>[] = Array.isArray(
       middlewareOrMiddlewareList
     )
       ? middlewareOrMiddlewareList.reverse()
       : [middlewareOrMiddlewareList];
-    // 经中间件包装后的OmiLambda
-    middlewareStack.forEach((middleware) => {
-      const lambdaFunc = lambda;
-      const newLambda: Lambda = async (ctx) => {
-        let result: ResponseType;
-        let executed = false;
-        // 这个是返回值拦截器，它可以在中间件中修改函数的返回值
-        // 实际上就是抛出一个特定类型的Error中断函数的执行，同时用传入的参数值覆盖住result
-        // 从而实现返回值的拦截处理
-        const returnInterceptor = (returnVal: ResponseType) => {
-          result = returnVal;
-          throw new MiddlewareReturnInterceptor();
-        };
-        // 这是执行被中间件包裹的内容的函数，同时把返回值取出来保存
-        const next = async () => {
-          executed = true;
-          result = await lambdaFunc(ctx);
-        };
+    // target类型为Object时表示装饰器的装饰对象是在控制器内修饰的方法
+    // 这里的target指的是实例化后的控制器类对象
+    if (typeof target === "object") {
+      let lambda: Lambda = descriptor?.value;
+      // 经中间件包装后的OmiLambda
+      middlewareStack.forEach((middleware) => {
+        lambda = packMiddleware(lambda, middleware);
+      });
 
-        // 先执行中间件
-        try {
-          await middleware(ctx, next, returnInterceptor);
-        } catch (e) {
-          // 如果不是中间件返回值拦截器引发的异常就继续抛
-          // 让OmiServer Build方法里定义的错误处理器去处理
-          if (!(e instanceof MiddlewareReturnInterceptor)) {
-            throw e;
-          }
-        }
+      if (descriptor) {
+        descriptor.value = lambda;
+        return;
+      }
+    }
 
-        // 如果发现中间件包裹的内容没有被执行，则执行中间内容
-        // 这是为了在处理一些简单中间件的时候不用每次都去显式的声明await next()
-        if (!executed) {
-          await next();
+    // 当target类型为function时表示当前修饰的对象是类（这里的target指的是类的构造函数）
+    if (typeof target === "function") {
+      const constructor: new () => BasicOmiController = target;
+      const impl = new constructor();
+      const lambdas = getLambdas(impl);
+      lambdas.forEach((lambda, key, map) => {
+        middlewareStack.forEach((middleware) => {
+          const middlewaredLambda = packMiddleware(lambda, middleware);
+          map.set(key, middlewaredLambda);
+        });
+      });
+      return class extends constructor {
+        constructor() {
+          super();
+          // 在构造方法里直接修改类的原型链，以实现中间件的洋葱式调用
+          const self: any = Object.getPrototypeOf(this);
+          lambdas.forEach((lambda, key) => {
+            self[key] = lambda;
+          });
         }
-        return result!;
+        namespace: string = impl.namespace;
       };
-      lambda = newLambda;
-    });
+    }
 
-    descriptor.value = lambda;
-  };
+    throw new Error("构建中间件的过程中出现了未知错误");
+  }
+
+  return useMiddleware;
 }

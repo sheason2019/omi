@@ -1,4 +1,4 @@
-import { BasicOmiController, OmiLambda } from "../dist";
+import { BasicOmiController } from "../src";
 import { OmiMiddleware, Use } from "../src/decorator";
 
 const middlewareA: OmiMiddleware<any, any> = async (
@@ -6,7 +6,9 @@ const middlewareA: OmiMiddleware<any, any> = async (
   next,
   returnInterceptor
 ) => {
-  console.log("use middlewareA");
+  console.log("use middlewareA start");
+  await next();
+  console.log("use MiddlewareA end");
 };
 
 const middlewareB: OmiMiddleware<any, any> = async (
@@ -14,18 +16,21 @@ const middlewareB: OmiMiddleware<any, any> = async (
   next,
   returnInterceptor
 ) => {
-  console.log("use middlewareB");
+  console.log("use middlewareA start");
+  await next();
+  console.log("use MiddlewareA end");
 };
 
-class TodoController {
+@Use(middlewareA)
+class TodoController extends BasicOmiController {
   namespace: string = "Test";
 
-  @Use([middlewareA, middlewareB])
-  async Hello() {
+  @Use([middlewareB])
+  async GetHello() {
     return "Hello";
   }
 }
 
 const controller = new TodoController();
-controller.Hello().then(console.log);
 console.log(Object.getOwnPropertyNames(Object.getPrototypeOf(controller)));
+controller.GetHello().then(console.log);

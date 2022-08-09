@@ -1,4 +1,5 @@
 import Koa from "koa";
+import { OmiMiddleware } from "./decorator";
 
 export type OmiServerCtx<Props extends any> = Koa.ParameterizedContext<
   Koa.DefaultState,
@@ -14,6 +15,17 @@ export type OmiLambda<Props extends any, Response extends any> = (
 
 export abstract class BasicOmiController {
   abstract namespace: string;
+
+  getLambda<Props extends any, ResponseType extends any>(
+    lambdaName: string
+  ): OmiLambda<Props, ResponseType> {
+    const self: any = this;
+    const lambda: OmiLambda<Props, ResponseType> = self[lambdaName];
+    if (!lambda || typeof lambda !== "function") {
+      throw new Error("获取Lambda的参数有误::" + lambdaName);
+    }
+    return lambda;
+  }
 }
 
 interface IOmiErrorConstructProps {

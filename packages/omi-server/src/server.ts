@@ -2,23 +2,7 @@ import Koa from "koa";
 import bodyParser from "koa-bodyparser";
 import Router, { IMiddleware } from "koa-router";
 import { BasicOmiController, OmiError, OmiLambda } from "./typings";
-
-const methods = ["Get", "Post", "Put", "Delete", "Patch"] as const;
-type Method = typeof methods[number];
-
-// 检查函数名称的RESTFul Method类型
-const patchMethod = (name: string): Method | null => {
-  // 方法名小于3自动剪枝
-  if (name.length < 3) {
-    return null;
-  }
-  for (const method of methods) {
-    if (name.indexOf(method) === 0) {
-      return method;
-    }
-  }
-  return null;
-};
+import { Method, patchMethod } from "./utils";
 
 // 注册Controller
 const registController = <T extends BasicOmiController>(
