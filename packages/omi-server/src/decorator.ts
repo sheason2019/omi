@@ -8,8 +8,8 @@ import { getLambdas, packMiddleware } from "./utils";
  */
 export type OmiMiddleware<Props extends any, ResponseType extends any> = (
   ctx: OmiServerCtx<Props>,
-  next: () => Promise<void>,
-  returnInterceptor: (val: ResponseType) => void
+  next: () => Promise<ResponseType>,
+  setReturnValue: (val: ResponseType) => void
 ) => Promise<any>;
 
 export function Use<Props extends any, ResponseType extends any>(

@@ -4,10 +4,10 @@ import { OmiMiddleware, Use } from "../src/decorator";
 const middlewareA: OmiMiddleware<any, any> = async (
   ctx,
   next,
-  returnInterceptor
+  setReturnValue
 ) => {
   console.log("use middlewareA start");
-  await next();
+  const val = await next();
   console.log("use MiddlewareA end");
 };
 

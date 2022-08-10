@@ -16,33 +16,38 @@ export const packMiddleware = <Props extends any, ResponseType extends any>(
   const newLambda: OmiLambda<Props, ResponseType> = async (ctx) => {
     let result: ResponseType;
     let executed = false;
+    let returnValueSetted = false;
     // 这个是返回值拦截器，它可以在中间件中修改函数的返回值
-    // 实际上就是抛出一个特定类型的Error中断函数的执行，同时用传入的参数值覆盖住result
-    // 从而实现返回值的拦截处理
-    const returnInterceptor = (returnVal: ResponseType) => {
+    // 它的设计目的是为中间件提供修改控制器方法返回值的能力
+    const setReturnValue = (returnVal: ResponseType) => {
+      // 如果在中间件里手动设置了返回值，则不会默认在函数末尾调用next函数
+      // 因为这个功能的预期场景就是 提前返回 和 对获取到的返回值进行处理
+      // 所以，不管出于什么因素考虑，都不该在使用setReturnValue方法后
+      // 继续默认调用next方法
+      returnValueSetted = true;
       result = returnVal;
-      throw new MiddlewareReturnInterceptor();
     };
     // 这是执行被中间件包裹的内容的函数，同时把返回值取出来保存
     const next = async () => {
+      if (executed) {
+        throw new Error(
+          "在中间件中多次调用了next方法！每个中间件最多只能调用一次next方法！"
+        );
+      }
+      if (returnValueSetted) {
+        throw new Error("不能在调用setReturnValue方法后继续调用next方法！");
+      }
       executed = true;
       result = await lambdaFunc(ctx);
+      return result;
     };
 
     // 先执行中间件
-    try {
-      await middleware(ctx, next, returnInterceptor);
-    } catch (e) {
-      // 如果不是中间件返回值拦截器引发的异常就继续抛
-      // 让OmiServer Build方法里定义的错误处理器去处理
-      if (!(e instanceof MiddlewareReturnInterceptor)) {
-        throw e;
-      }
-    }
+    await middleware(ctx, next, setReturnValue);
 
-    // 如果发现中间件包裹的内容没有被执行，则执行中间内容
+    // 如果发现中间件包裹的内容没有被执行并且用户也没有调用提前返回的函数，则执行中间内容
     // 这是为了在处理一些简单中间件的时候不用每次都去显式的声明await next()
-    if (!executed) {
+    if (!executed && !returnValueSetted) {
       await next();
     }
     return result!;
