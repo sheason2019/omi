@@ -1,5 +1,11 @@
 const methods = ["Get", "Post", "Put", "Delete", "Patch"] as const;
 type Method = typeof methods[number];
+export interface CommentsTree {
+  type: "comments";
+  // 注释的位置 独立成行或者是与其他内容共用一行
+  display: "block" | "inline";
+  content: string;
+}
 export interface VariableTree {
   // 类型：变量
   type: "variable";
@@ -27,7 +33,12 @@ export interface ServiceTree {
   name: string;
   items: FunctionTree[];
 }
-export type AST = VariableTree | StructTree | FunctionTree | ServiceTree;
+export type AST =
+  | VariableTree
+  | StructTree
+  | FunctionTree
+  | ServiceTree
+  | CommentsTree;
 
 enum Status {
   Init = 1,
@@ -49,7 +60,11 @@ class Parser {
     this.formatMap.set("void", {});
   }
 
+  // 状态机的指针位置信息
   index: number = 0;
+  row: number = 0;
+  col: number = 0;
+
   content: string = "";
 
   tree: AST[] = [];
@@ -63,6 +78,15 @@ class Parser {
     this.content = content;
   }
 
+  wComments(prefix: string, display: "block" | "inline"): CommentsTree {
+    const row = prefix + this.readRow();
+    return {
+      type: "comments",
+      display,
+      content: prefix + row,
+    };
+  }
+
   wKeyword(word: string) {
     if (word === "struct") {
       const astNode = this.wStruct({});
@@ -72,6 +96,10 @@ class Parser {
     if (word === "service") {
       const astNode = this.wService({});
       // console.log(astNode);
+      return astNode;
+    }
+    if (word.indexOf("//") === 0) {
+      const astNode = this.wComments(word, "block");
       return astNode;
     }
     if (!word.length) {
@@ -235,6 +263,11 @@ class Parser {
     const char = this.content.charAt(this.index);
     if (char === " " || char === "\n") {
       this.index++;
+      this.col++;
+      if (char === "\n") {
+        this.col = 0;
+        this.row++;
+      }
       return this.skipSpace();
     }
     if (this.index > this.content.length) {
@@ -243,9 +276,8 @@ class Parser {
     return;
   }
 
-  readWord() {
+  readWord(): string {
     this.skipSpace();
-    let wordStash = "";
     const char = this.content.charAt(this.index);
     if (
       char === "{" ||
@@ -257,6 +289,8 @@ class Parser {
       this.index++;
       return char;
     }
+
+    let wordStash = "";
     while (
       splitChar.indexOf(this.content.charAt(this.index)) === -1 &&
       this.index < this.content.length
@@ -265,6 +299,17 @@ class Parser {
       this.index++;
     }
     return wordStash;
+  }
+  readRow(): string {
+    let row = "";
+    while (
+      this.content.charAt(this.index) !== "\n" &&
+      this.index < this.content.length
+    ) {
+      row += this.content.charAt(this.index);
+      this.index++;
+    }
+    return row;
   }
 }
 
