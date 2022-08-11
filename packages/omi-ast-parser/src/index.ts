@@ -1,4 +1,5 @@
 import {
+  CommentsNode,
   FormatNode,
   FunctionArgumentsNode,
   FunctionDeclarationNode,
@@ -18,11 +19,43 @@ const signalChar = ["(", ")", "{", "}", ";", ","];
 const spaceChar = [" ", "\n"];
 const splitChar = signalChar.concat(spaceChar);
 
+// 构建wFunction语法树的状态
+enum FunctionStatus {
+  ReturnType = 1,
+  Identify,
+  Args,
+  EndToken,
+  Finish,
+}
+
+// 构建wService语法树的状态
+enum ServiceStatus {
+  Keyword = 1,
+  Identify,
+  Content,
+  Finish,
+}
+
+// 构建wFormat语法树的状态
+enum FormatStatus {
+  Repeated = 1,
+  Format,
+  Finish,
+}
+
+enum VariableStatus {
+  Format = 1,
+  Identify,
+  EndToken,
+  Finish,
+}
+
 export class OmiParser {
   // 用来解析的内容
   private content: string = "";
 
   private currentToken: TokenValue = {
+    type: "Text",
     token: "",
     start: 0,
     end: 0,
@@ -51,49 +84,93 @@ export class OmiParser {
   }
 
   wFormat() {
-    const body: FormatNode["body"] = [];
-    let token = this.currentToken;
-    const start = token.start;
-    body.push(token);
+    let status: FormatStatus = FormatStatus.Repeated;
+
+    const start = this.currentToken.start;
 
     let repeated = false;
-    if (token.token === "repeated") {
-      repeated = true;
-      token = this.readToken();
-      body.push(token);
+    let format: TokenValue | undefined;
+    const body: FormatNode["body"] = [];
+
+    while (status !== FormatStatus.Finish) {
+      const comment = this.wComments();
+      if (comment) {
+        body.push(comment);
+        continue;
+      }
+
+      if (status === FormatStatus.Repeated) {
+        if (this.currentToken.token === "repeated") {
+          repeated = true;
+          this.readToken();
+        }
+        status = FormatStatus.Format;
+        continue;
+      }
+      if (status === FormatStatus.Format) {
+        format = this.currentToken;
+        body.push(format);
+        status = FormatStatus.Finish;
+        continue;
+      }
     }
-    const format: FormatNode = {
+
+    const formatNode: FormatNode = {
       type: "Format",
-      identify: token.token,
-      format: token.token,
+      format: format!.token,
       start,
-      end: token.end,
+      end: this.currentToken.end,
       repeated,
       body,
     };
-    return format;
+    return formatNode;
   }
 
   wVariable(splitChar: ("," | ";" | ")" | "}")[]) {
-    const body: (FormatNode | IdentifyNode)[] = [];
-    const format = this.wFormat();
-    body.push(format);
+    let status: VariableStatus = VariableStatus.Format;
 
-    this.readToken();
-    const identify = this.wIdentify();
-    body.push(identify);
+    const start = this.currentToken.start;
+    const body: VariableDeclarationNode["body"] = [];
 
-    const end = this.readToken();
-    if ((<string[]>splitChar).indexOf(end.token) === -1) {
-      throw new Error("变量声明没有应用正确的终止符：" + JSON.stringify(end));
+    let format: FormatNode | undefined;
+    let identify: IdentifyNode | undefined;
+    let end: TokenValue = this.currentToken;
+
+    while (status !== VariableStatus.Finish) {
+      const comment = this.wComments();
+      if (comment) {
+        body.push(comment);
+        continue;
+      }
+
+      if (status === VariableStatus.Format) {
+        format = this.wFormat();
+        body.push(format);
+        this.readToken();
+      }
+      if (status === VariableStatus.Identify) {
+        identify = this.wIdentify();
+        body.push(identify);
+        this.readToken();
+      }
+      if (status === VariableStatus.EndToken) {
+        end = this.currentToken;
+        if ((<string[]>splitChar).indexOf(end.token) === -1) {
+          throw new Error(
+            "变量声明没有应用正确的终止符：" + JSON.stringify(end)
+          );
+        }
+      }
+
+      status++;
     }
 
     const variable: VariableDeclarationNode = {
       type: "VariableDeclaration",
-      start: format.start,
-      end: end.end,
-      format: format.identify,
-      identify: identify.token,
+      start,
+      end: this.currentToken.end,
+      format: format!.format,
+      identify: identify!.token,
       body: body,
     };
     return variable;
@@ -129,31 +206,54 @@ export class OmiParser {
   }
 
   wFunction(): FunctionDeclarationNode {
-    const body: (IdentifyNode | FormatNode | FunctionArgumentsNode)[] = [];
+    let status: FunctionStatus = FunctionStatus.ReturnType;
 
-    const returnType = this.wFormat();
-    body.push(returnType);
+    const body: FunctionDeclarationNode["body"] = [];
 
-    this.readToken();
-    const identify = this.wIdentify();
-    body.push(identify);
+    let returnType: FormatNode | undefined;
+    let identify: IdentifyNode | undefined;
+    let args: FunctionArgumentsNode | undefined;
+    let end: TokenValue = this.currentToken;
 
-    this.readToken();
-    const args = this.wFunctionArguments();
-    body.push(args);
+    while (status !== FunctionStatus.Finish) {
+      const comment = this.wComments();
+      if (comment) {
+        body.push(comment);
+        continue;
+      }
 
-    const end = this.readToken();
-    if (end.token !== ";") {
-      throw new Error("函数定义必须以分号作为结尾");
+      if (status === FunctionStatus.ReturnType) {
+        returnType = this.wFormat();
+        body.push(returnType);
+        this.readToken();
+      }
+      if (status === FunctionStatus.Identify) {
+        identify = this.wIdentify();
+        body.push(identify);
+        this.readToken();
+      }
+      if (status === FunctionStatus.Args) {
+        args = this.wFunctionArguments();
+        body.push(args);
+        this.readToken();
+      }
+      if (status === FunctionStatus.EndToken) {
+        end = this.currentToken;
+        if (end.token !== ";") {
+          throw new Error("函数定义必须以分号作为结尾");
+        }
+      }
+
+      status++;
     }
 
     const func: FunctionDeclarationNode = {
       type: "FunctionDeclaration",
-      start: returnType.start,
+      start: returnType!.start,
       end: end.end,
-      returnType,
-      identify,
-      arguments: args,
+      returnType: returnType!,
+      identify: identify!,
+      arguments: args!,
       body,
     };
 
@@ -169,6 +269,12 @@ export class OmiParser {
 
     this.readToken();
     while (true) {
+      const comment = this.wComments();
+      if (comment) {
+        body.push(comment);
+        continue;
+      }
+
       const func = this.wFunction();
       body.push(func);
       const nextToken = this.readToken();
@@ -196,6 +302,12 @@ export class OmiParser {
 
     this.readToken();
     while (true) {
+      const comment = this.wComments();
+      if (comment) {
+        body.push(comment);
+        continue;
+      }
+
       const variable = this.wVariable([";", "}"]);
       body.push(variable);
       const nextToken = this.readToken();
@@ -234,33 +346,68 @@ export class OmiParser {
     return keyword;
   }
 
+  wComments() {
+    let comment: CommentsNode | undefined;
+    if (this.currentToken.token.indexOf("//") === 0) {
+      comment = this.wCommentsRow();
+      this.readToken();
+    } else if (this.currentToken.token.indexOf("/*") === 0) {
+      comment = this.wCommentsBlock();
+      this.readToken();
+    }
+    return comment;
+  }
+
   // 构建Service语法树
   wService() {
+    let status: ServiceStatus = ServiceStatus.Keyword;
+
     const body: ServiceDeclarationNode["body"] = [];
 
     const start = this.currentToken.start;
 
-    // 将声明关键词写入body
-    const keyword = this.wKeyword();
-    body.push(keyword);
+    let identify: IdentifyNode | undefined;
+    let content: ServiceContentNode | undefined;
 
-    // 写入service的名称
-    this.readToken();
-    const identify = this.wIdentify();
-    body.push(identify);
+    while (status !== ServiceStatus.Finish) {
+      const comment = this.wComments();
+      if (comment) {
+        body.push(comment);
+        continue;
+      }
 
-    // 写入service的内容
-    this.readToken();
-    const content = this.wServiceContent();
-    body.push(content);
+      if (status === ServiceStatus.Keyword) {
+        // 将声明关键词写入body
+        const keyword = this.wKeyword();
+        body.push(keyword);
+        this.readToken();
+        status++;
+        continue;
+      }
+      if (status === ServiceStatus.Identify) {
+        // 写入service的名称
+        identify = this.wIdentify();
+        body.push(identify);
+        this.readToken();
+        status++;
+        continue;
+      }
+      if (status === ServiceStatus.Content) {
+        // 写入service的内容
+        content = this.wServiceContent();
+        body.push(content);
+        status++;
+        continue;
+      }
+    }
 
     const service: ServiceDeclarationNode = {
       type: "ServiceDeclaration",
       body,
       start: start,
-      end: content.end,
-      identify: identify.token,
-      content,
+      end: content!.end,
+      identify: identify!.token,
+      content: content!,
     };
 
     return service;
@@ -294,14 +441,90 @@ export class OmiParser {
     return struct;
   }
 
+  wCommentsRow() {
+    const token = this.currentToken;
+
+    // 向前寻找字符，确认自己是否为独立成行的注释
+    let point = this.index - 3;
+    let variant: CommentsNode["variant"] = "block";
+    while (point > -1) {
+      if (/\S/.test(this.content.charAt(point))) {
+        variant = "inline";
+        break;
+      }
+      if (this.content.charAt(point) === "\n") {
+        break;
+      }
+      point--;
+    }
+    // 读取整行内容
+    let wordStash = "";
+    while (this.content.charAt(this.index) !== "\n") {
+      wordStash += this.content.charAt(this.index++);
+    }
+    const content = token.token + wordStash;
+
+    const comments: CommentsNode = {
+      type: "Comments",
+      start: token.start,
+      end: token.end + content.length,
+      variant,
+      content,
+    };
+
+    return comments;
+  }
+
+  wCommentsBlock() {
+    const token = this.currentToken;
+
+    // 向前寻找字符，确认自己是否为独立成行的注释
+    let point = this.index - 3;
+    let variant: CommentsNode["variant"] = "block";
+    while (point > -1) {
+      if (/\S/.test(this.content.charAt(point))) {
+        variant = "inline";
+        break;
+      }
+      if (this.content.charAt(point) === "\n") {
+        break;
+      }
+      point--;
+    }
+
+    let wordStash = token.token;
+    // 读取注释块的内容
+    while (!/^\/\*[\S\s]+\*\/$/.test(wordStash)) {
+      wordStash += this.content.charAt(this.index++);
+    }
+    const content = wordStash;
+
+    const comments: CommentsNode = {
+      type: "Comments",
+      start: token.start,
+      end: token.start + wordStash.length - 1,
+      variant,
+      content,
+    };
+    return comments;
+  }
+
   // 状态机初始化运转状态，可接收的token类型有：注释、结构体声明、服务声明
   wToken() {
     const token = this.readToken();
-    let val: StructDeclarationNode | ServiceDeclarationNode | undefined;
+    let val:
+      | StructDeclarationNode
+      | ServiceDeclarationNode
+      | CommentsNode
+      | undefined;
     if (token.token === "service") {
       val = this.wService();
     } else if (token.token === "struct") {
       val = this.wStruct();
+    } else if (token.token.indexOf("//") === 0) {
+      val = this.wCommentsRow();
+    } else if (token.token.indexOf("/*") === 0) {
+      val = this.wCommentsBlock();
     }
     if (!val) {
       throw new Error("获取到了未定义的关键字");
@@ -327,8 +550,8 @@ export class OmiParser {
     try {
       return func();
     } catch (e) {
-      let row = 0;
-      let col = 0;
+      let row = 1;
+      let col = 1;
       for (let i = 0; i < this.index; i++) {
         col++;
         if (this.content.charAt(i) === "\n") {
@@ -371,7 +594,12 @@ export class OmiParser {
     const char = this.content.charAt(this.index);
     if (signalChar.indexOf(char) !== -1) {
       this.index++;
-      this.currentToken = { token: char, start, end: start + char.length };
+      this.currentToken = {
+        type: "Text",
+        token: char,
+        start,
+        end: start + char.length - 1,
+      };
       return this.currentToken;
     }
 
@@ -380,10 +608,22 @@ export class OmiParser {
       splitChar.indexOf(this.content.charAt(this.index)) === -1 &&
       this.index < this.content.length
     ) {
-      wordStash += this.content.charAt(this.index);
+      if (
+        wordStash.length &&
+        this.content.charAt(this.index) === "/" &&
+        wordStash.charAt(0) !== "/"
+      ) {
+        break;
+      }
+      if (/^\/\*[\S\s]+\*\/$/.test(wordStash)) {
+        break;
+      }
+      const char = this.content.charAt(this.index);
+      wordStash += char;
       this.index++;
     }
     this.currentToken = {
+      type: "Text",
       token: wordStash,
       start,
       end: start + wordStash.length - 1,

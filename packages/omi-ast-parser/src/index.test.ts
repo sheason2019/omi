@@ -1,14 +1,15 @@
+import * as fs from "fs";
 import { OmiParser } from ".";
 
 const testContent = `struct Todo {
   string content;
   boolean finish;
   int32 createTime;
-}
+} // inline comments
 
 service Todo {
   repeated Todo GetTodoList();
-  void PostTodo(Todo todo);
+  void PostTodo(Todo/*try*/todo); // 提交TODO信息
   void PutTodo(Todo todo);
   void DeleteTodo(Todo todo);
 }`;
@@ -16,4 +17,5 @@ service Todo {
 const parser = new OmiParser();
 parser.setContent(testContent);
 const result = parser.build();
-console.log(result);
+
+fs.writeFileSync("dist/test.json", JSON.stringify(result, null, 2));

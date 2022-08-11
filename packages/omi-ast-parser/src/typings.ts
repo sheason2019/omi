@@ -1,12 +1,10 @@
-export interface TokenValue {
-  start: number;
-  end: number;
+export interface TokenValue extends TokenNode {
+  type: "Text";
   token: string;
 }
 
 export interface TokenNode {
-  token?: string;
-  body?: TokenNode[];
+  type: string;
   start: number;
   end: number;
 }
@@ -18,7 +16,8 @@ export interface ProgramNode extends TokenNode {
 
 export interface CommentsNode extends TokenNode {
   type: "Comments";
-  token: string;
+  content: string;
+  variant: "block" | "inline";
 }
 
 export interface StructDeclarationNode extends TokenNode {
@@ -30,10 +29,9 @@ export interface StructDeclarationNode extends TokenNode {
 
 export interface FormatNode extends TokenNode {
   type: "Format";
-  identify: string;
   format: string;
   repeated: boolean;
-  body: TokenValue[];
+  body: (TokenValue | CommentsNode)[];
 }
 
 export interface KeywordNode extends TokenNode {
@@ -63,7 +61,7 @@ export interface ServiceDeclarationNode extends TokenNode {
   type: "ServiceDeclaration";
   identify: string;
   content: ServiceContentNode;
-  body: (KeywordNode | IdentifyNode | ServiceContentNode)[];
+  body: (KeywordNode | IdentifyNode | ServiceContentNode | CommentsNode)[];
 }
 
 export interface ServiceContentNode extends TokenNode {
