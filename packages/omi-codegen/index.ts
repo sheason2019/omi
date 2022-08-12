@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import Parser from "omi-ast-parser";
+import { OmiParser } from "omi-ast-parser";
 import ClientGenerator from "./lib/typescript/client";
 import ServerGenerator from "./lib/typescript/server";
 
@@ -14,7 +14,7 @@ export class OmiCodegen {
     if (!this.content) {
       return null;
     }
-    const parser = new Parser();
+    const parser = new OmiParser();
 
     parser.setContent(this.content);
 

@@ -5,6 +5,8 @@ import {
   FunctionDeclarationNode,
   IdentifyNode,
   KeywordNode,
+  Method,
+  methods,
   ProgramNode,
   ServiceContentNode,
   ServiceDeclarationNode,
@@ -15,7 +17,7 @@ import {
 } from "./typings";
 
 // parser负责把文本编译成AST
-const signalChar = ["(", ")", "{", "}", ";", ","];
+const signalChar = ["(", ")", "{", "}", ";", ",", "?"];
 const spaceChar = [" ", "\n"];
 const splitChar = signalChar.concat(spaceChar);
 
@@ -38,7 +40,7 @@ enum ServiceStatus {
 
 // 构建wFormat语法树的状态
 enum FormatStatus {
-  Repeated = 1,
+  Properties = 1,
   Format,
   Finish,
 }
@@ -84,11 +86,12 @@ export class OmiParser {
   }
 
   wFormat() {
-    let status: FormatStatus = FormatStatus.Repeated;
+    let status: FormatStatus = FormatStatus.Properties;
 
     const start = this.currentToken.start;
 
     let repeated = false;
+    let optional = false;
     let format: TokenValue | undefined;
     const body: FormatNode["body"] = [];
 
@@ -99,12 +102,17 @@ export class OmiParser {
         continue;
       }
 
-      if (status === FormatStatus.Repeated) {
+      if (status === FormatStatus.Properties) {
         if (this.currentToken.token === "repeated") {
           repeated = true;
           this.readToken();
+        } else if (this.currentToken.token === "optional") {
+          optional = true;
+          this.readToken();
+        } else {
+          status = FormatStatus.Format;
         }
-        status = FormatStatus.Format;
+
         continue;
       }
       if (status === FormatStatus.Format) {
@@ -120,6 +128,7 @@ export class OmiParser {
       format: format!.token,
       start,
       end: this.currentToken.end,
+      optional,
       repeated,
       body,
     };
@@ -171,6 +180,8 @@ export class OmiParser {
       end: this.currentToken.end,
       format: format!.format,
       identify: identify!.token,
+      repeated: format!.repeated,
+      optional: format!.optional,
       body: body,
     };
     return variable;
@@ -247,13 +258,24 @@ export class OmiParser {
       status++;
     }
 
+    let method: Method | undefined;
+    methods.forEach((loopMethod) => {
+      if (identify?.token.indexOf(loopMethod)) {
+        method = loopMethod;
+      }
+    });
+    if (!method) {
+      throw new Error(`函数 ${identify?.token} 未定义正确的Method类型`);
+    }
+
     const func: FunctionDeclarationNode = {
       type: "FunctionDeclaration",
       start: returnType!.start,
       end: end.end,
       returnType: returnType!,
-      identify: identify!,
+      identify: identify!.token,
       arguments: args!,
+      method,
       body,
     };
 

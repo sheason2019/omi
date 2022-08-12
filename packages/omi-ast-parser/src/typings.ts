@@ -1,3 +1,6 @@
+export const methods = ["Get", "Post", "Put", "Delete", "Patch"] as const;
+export type Method = typeof methods[number];
+
 export interface TokenValue extends TokenNode {
   type: "Text";
   token: string;
@@ -11,7 +14,7 @@ export interface TokenNode {
 
 export interface ProgramNode extends TokenNode {
   type: "Program";
-  body: TokenNode[];
+  body: (ServiceDeclarationNode | StructDeclarationNode | CommentsNode)[];
 }
 
 export interface CommentsNode extends TokenNode {
@@ -30,6 +33,7 @@ export interface StructDeclarationNode extends TokenNode {
 export interface FormatNode extends TokenNode {
   type: "Format";
   format: string;
+  optional: boolean;
   repeated: boolean;
   body: (TokenValue | CommentsNode)[];
 }
@@ -48,7 +52,9 @@ export interface IdentifyNode extends TokenNode {
 export interface VariableDeclarationNode extends TokenNode {
   type: "VariableDeclaration";
   format: string;
+  repeated: boolean;
   identify: string;
+  optional: boolean;
   body: (FormatNode | IdentifyNode | CommentsNode)[];
 }
 
@@ -78,6 +84,7 @@ export interface FunctionDeclarationNode extends TokenNode {
   type: "FunctionDeclaration";
   returnType: FormatNode;
   arguments: FunctionArgumentsNode;
-  identify: IdentifyNode;
+  method: Method;
+  identify: string;
   body: (FormatNode | IdentifyNode | CommentsNode | FunctionArgumentsNode)[];
 }
