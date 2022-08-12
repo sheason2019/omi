@@ -1,4 +1,5 @@
-export const methods = ["Get", "Post", "Put", "Delete", "Patch"] as const;
+import { methods, keywords } from "./constant";
+
 export type Method = typeof methods[number];
 
 export interface TokenValue extends TokenNode {
@@ -14,7 +15,12 @@ export interface TokenNode {
 
 export interface ProgramNode extends TokenNode {
   type: "Program";
-  body: (ServiceDeclarationNode | StructDeclarationNode | CommentsNode)[];
+  body: (
+    | ServiceDeclarationNode
+    | StructDeclarationNode
+    | ImportDeclarationNode
+    | CommentsNode
+  )[];
 }
 
 export interface CommentsNode extends TokenNode {
@@ -40,8 +46,8 @@ export interface FormatNode extends TokenNode {
 
 export interface KeywordNode extends TokenNode {
   type: "Keyword";
-  token: string;
-  format: "struct" | "service";
+  token: TokenValue;
+  identify: typeof keywords[number];
 }
 
 export interface IdentifyNode extends TokenNode {
@@ -87,4 +93,34 @@ export interface FunctionDeclarationNode extends TokenNode {
   method: Method;
   identify: string;
   body: (FormatNode | IdentifyNode | CommentsNode | FunctionArgumentsNode)[];
+}
+
+export interface ImportDeclarationNode extends TokenNode {
+  type: "ImportDeclaration";
+  formats: string[];
+  path: string;
+  body: (
+    | ImportContentNode
+    | CommentsNode
+    | KeywordNode
+    | ImportPathNode
+    | TokenValue
+  )[];
+}
+
+export interface ImportContentNode extends TokenNode {
+  type: "ImportContentNode";
+  formats: string[];
+  body: (ImportFormatNode | CommentsNode)[];
+}
+
+export interface ImportPathNode extends TokenNode {
+  type: "ImportPathNode";
+  content: TokenValue;
+  path: string;
+}
+
+export interface ImportFormatNode extends TokenNode {
+  type: "ImportFormatNode";
+  format: string;
 }

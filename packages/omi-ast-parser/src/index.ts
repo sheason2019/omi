@@ -1,12 +1,30 @@
 import {
+  keywords,
+  methods,
+  quoteChar,
+  signalChar,
+  splitChar,
+} from "./constant";
+import {
+  FormatStatus,
+  VariableStatus,
+  FunctionStatus,
+  ServiceStatus,
+  ProgramStatus,
+  ImportStatus,
+} from "./status";
+import {
   CommentsNode,
   FormatNode,
   FunctionArgumentsNode,
   FunctionDeclarationNode,
   IdentifyNode,
+  ImportContentNode,
+  ImportDeclarationNode,
+  ImportFormatNode,
+  ImportPathNode,
   KeywordNode,
   Method,
-  methods,
   ProgramNode,
   ServiceContentNode,
   ServiceDeclarationNode,
@@ -15,42 +33,6 @@ import {
   TokenValue,
   VariableDeclarationNode,
 } from "./typings";
-
-// parser负责把文本编译成AST
-const signalChar = ["(", ")", "{", "}", ";", ",", "?"];
-const spaceChar = [" ", "\n"];
-const splitChar = signalChar.concat(spaceChar);
-
-// 构建wFunction语法树的状态
-enum FunctionStatus {
-  ReturnType = 1,
-  Identify,
-  Args,
-  EndToken,
-  Finish,
-}
-
-// 构建wService语法树的状态
-enum ServiceStatus {
-  Keyword = 1,
-  Identify,
-  Content,
-  Finish,
-}
-
-// 构建wFormat语法树的状态
-enum FormatStatus {
-  Properties = 1,
-  Format,
-  Finish,
-}
-
-enum VariableStatus {
-  Format = 1,
-  Identify,
-  EndToken,
-  Finish,
-}
 
 export class OmiParser {
   // 用来解析的内容
@@ -349,19 +331,18 @@ export class OmiParser {
 
   wKeyword() {
     const token = this.currentToken;
-    let format: "service" | "struct" = "service";
-    if (token.token === "service") {
-      format = "service";
-    } else if (token.token === "struct") {
-      format = "struct";
-    } else {
+
+    if ((<readonly string[]>keywords).indexOf(token.token) === -1) {
       throw new Error("未知的关键字类型");
     }
+    let identify: KeywordNode["identify"] = <typeof keywords[number]>(
+      token.token
+    );
 
     const keyword: KeywordNode = {
       type: "Keyword",
-      token: token.token,
-      format,
+      token: token,
+      identify,
       start: token.start,
       end: token.end,
     };
@@ -531,34 +512,206 @@ export class OmiParser {
     return comments;
   }
 
+  wImportContent() {
+    const start = this.currentToken.start;
+    let body: ImportContentNode["body"] = [];
+    let formats: ImportContentNode["formats"] = [];
+
+    this.readToken();
+    while (true) {
+      const comment = this.wComments();
+      if (comment) {
+        body.push(comment);
+        continue;
+      }
+
+      const importFormat: ImportFormatNode = {
+        type: "ImportFormatNode",
+        start: this.currentToken.start,
+        end: this.currentToken.end,
+        format: this.currentToken.token,
+      };
+      body.push(importFormat);
+      formats.push(importFormat.format);
+      const token = this.readToken();
+      if (token.token === "}") {
+        break;
+      } else if (token.token === ",") {
+        continue;
+      } else {
+        throw new Error("Import的类型声明没有正确的终止符");
+      }
+    }
+
+    const end = this.currentToken.end;
+    const content: ImportContentNode = {
+      type: "ImportContentNode",
+      start,
+      end,
+      body,
+      formats,
+    };
+    return content;
+  }
+
+  wImportPath() {
+    const content = this.currentToken.token;
+
+    let path: string | undefined;
+
+    if (/\"([\S\s]+)\"/.test(content)) {
+      path = /\"([\S\s]+)\"/.exec(content)?.at(1);
+    }
+    if (/\'([\S\s]+)\'/.test(content)) {
+      path = /\'([\S\s]+)\'/.exec(content)?.at(1);
+    }
+
+    if (!path) {
+      throw new Error("不合法的import路径");
+    }
+
+    const importPath: ImportPathNode = {
+      type: "ImportPathNode",
+      start: this.currentToken.start,
+      end: this.currentToken.end,
+      content: this.currentToken,
+      path,
+    };
+    return importPath;
+  }
+
+  // import属性的处理
+  wImport(): ImportDeclarationNode {
+    let status: ImportStatus = ImportStatus.KeywordImport;
+
+    const start = this.currentToken.start;
+
+    let body: ImportDeclarationNode["body"] = [];
+    let formats: string[] = [];
+    let content: ImportContentNode | undefined;
+    let path: ImportPathNode | undefined;
+
+    while (status !== ImportStatus.Finish) {
+      const comments = this.wComments();
+      if (comments) {
+        body.push(comments);
+        continue;
+      }
+
+      if (status === ImportStatus.KeywordImport) {
+        const keyword = this.wKeyword();
+        if (keyword.identify !== "import") {
+          throw new Error(
+            "在import语句中使用了错误的关键字，期望：import 实际：" +
+              keyword.identify
+          );
+        }
+        body.push(keyword);
+        status = ImportStatus.Content;
+        this.readToken();
+        continue;
+      }
+      if (status === ImportStatus.Content) {
+        content = this.wImportContent();
+        formats = content.formats;
+        body.push(content);
+        status = ImportStatus.KeywordFrom;
+        this.readToken();
+        continue;
+      }
+      if (status === ImportStatus.KeywordFrom) {
+        const keyword = this.wKeyword();
+        if (keyword.identify !== "from") {
+          throw new Error(
+            "在import语句中使用了错误的关键字，期望：from 实际：" +
+              keyword.identify
+          );
+        }
+        body.push(keyword);
+        status = ImportStatus.Path;
+        this.readToken();
+        continue;
+      }
+      if (status === ImportStatus.Path) {
+        path = this.wImportPath();
+        body.push(path);
+        status = ImportStatus.EndToken;
+        this.readToken();
+        continue;
+      }
+      if (status === ImportStatus.EndToken) {
+        const token = this.currentToken;
+        if (token.token !== ";") {
+          throw new Error("Import 语句没有正确结束");
+        }
+        body.push(token);
+        status = ImportStatus.Finish;
+        this.readToken();
+        continue;
+      }
+    }
+
+    const end = this.currentToken.end;
+    const importDeclaration: ImportDeclarationNode = {
+      type: "ImportDeclaration",
+      start,
+      end,
+      body,
+      formats,
+      path: path!.path,
+    };
+    return importDeclaration;
+  }
+
   // 状态机初始化运转状态，可接收的token类型有：注释、结构体声明、服务声明
-  wToken() {
-    const token = this.readToken();
-    let val:
-      | StructDeclarationNode
-      | ServiceDeclarationNode
-      | CommentsNode
-      | undefined;
-    if (token.token === "service") {
-      val = this.wService();
-    } else if (token.token === "struct") {
-      val = this.wStruct();
-    } else if (token.token.indexOf("//") === 0) {
-      val = this.wCommentsRow();
-    } else if (token.token.indexOf("/*") === 0) {
-      val = this.wCommentsBlock();
+  wProgramBody() {
+    let status: ProgramStatus = ProgramStatus.Import;
+    const body: ProgramNode["body"] = [];
+
+    while (this.index < this.content.length) {
+      const token = this.readToken();
+      let val: ProgramNode["body"][number] | undefined;
+
+      // 不管在什么情况下都可以写入注释
+      if (token.token.indexOf("//") === 0) {
+        val = this.wCommentsRow();
+        body.push(val);
+        continue;
+      } else if (token.token.indexOf("/*") === 0) {
+        val = this.wCommentsBlock();
+        body.push(val);
+        continue;
+      }
+
+      // 依赖导入阶段
+      if (status === ProgramStatus.Import) {
+        if (token.token === "import") {
+          val = this.wImport();
+        } else if (token.token === "service" || token.token === "struct") {
+          status = ProgramStatus.Declare;
+        }
+      }
+
+      // IDL定义阶段
+      if (status === ProgramStatus.Declare) {
+        if (token.token === "service") {
+          val = this.wService();
+        } else if (token.token === "struct") {
+          val = this.wStruct();
+        }
+      }
+      if (!val) {
+        throw new Error("获取到了未定义的关键字");
+      }
+      body.push(val);
     }
-    if (!val) {
-      throw new Error("获取到了未定义的关键字");
-    }
-    return val;
+
+    return body;
   }
 
   private _build() {
-    const body: ProgramNode["body"] = [];
-    while (this.index < this.content.length) {
-      body.push(this.wToken());
-    }
+    const body: ProgramNode["body"] = this.wProgramBody();
+
     const program: ProgramNode = {
       type: "Program",
       body,
@@ -626,23 +779,36 @@ export class OmiParser {
     }
 
     let wordStash = "";
-    while (
-      splitChar.indexOf(this.content.charAt(this.index)) === -1 &&
-      this.index < this.content.length
-    ) {
-      if (
-        wordStash.length &&
-        this.content.charAt(this.index) === "/" &&
-        wordStash.charAt(0) !== "/"
+    // 检测到了字符串Token
+    if (quoteChar.indexOf(char) !== -1) {
+      while (
+        !/^\'[\S\s]*\'/.test(wordStash) &&
+        !/^\"[\S\s]*\"$/.test(wordStash) &&
+        this.index < this.content.length
       ) {
-        break;
+        const char = this.content.charAt(this.index);
+        wordStash += char;
+        this.index++;
       }
-      if (/^\/\*[\S\s]+\*\/$/.test(wordStash)) {
-        break;
+    } else {
+      while (
+        splitChar.indexOf(this.content.charAt(this.index)) === -1 &&
+        this.index < this.content.length
+      ) {
+        if (
+          wordStash.length &&
+          this.content.charAt(this.index) === "/" &&
+          wordStash.charAt(0) !== "/"
+        ) {
+          break;
+        }
+        if (/^\/\*[\S\s]+\*\/$/.test(wordStash)) {
+          break;
+        }
+        const char = this.content.charAt(this.index);
+        wordStash += char;
+        this.index++;
       }
-      const char = this.content.charAt(this.index);
-      wordStash += char;
-      this.index++;
     }
     this.currentToken = {
       type: "Text",
