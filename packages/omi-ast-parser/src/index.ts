@@ -742,7 +742,7 @@ export class OmiParser {
   }
 
   // 构建抽象语法树
-  build() {
+  build(): ProgramNode {
     return this.errorHandler(() => this._build());
   }
 

@@ -1,9 +1,7 @@
-import * as fs from "fs";
-import { OmiCodegen } from ".";
+import { OmiCodegen } from "./index";
 
 const codegen = new OmiCodegen();
 
-const content = fs.readFileSync("../omi-example-idl/import.omi").toString();
+codegen.parse("../omi-example-idl/");
 
-codegen.setContent(content);
-codegen.toTypescript("both", "import", "test-dist");
+codegen.toTypescript("both", "test-dist");
