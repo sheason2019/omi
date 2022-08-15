@@ -3,7 +3,7 @@ struct Todo {
   // variable block
   optional repeated string content; // variable inline
   boolean finish;
-  int32 createTime;
+  int createTime;
 }
 
 // block

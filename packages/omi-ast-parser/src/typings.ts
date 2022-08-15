@@ -136,3 +136,7 @@ export interface ImportFormatNode extends TokenNode {
   type: "ImportFormatNode";
   format: string;
 }
+
+export interface FormatMapValue {
+  origin: "declaration" | "import" | "basic";
+}

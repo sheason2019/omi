@@ -5,6 +5,7 @@ import {
   signalChar,
   splitChar,
 } from "./constant";
+import { initFormatMap } from "./lambda";
 import {
   FormatStatus,
   VariableStatus,
@@ -15,6 +16,7 @@ import {
 } from "./status";
 import {
   CommentsNode,
+  FormatMapValue,
   FormatNode,
   FunctionArgumentsNode,
   FunctionDeclarationNode,
@@ -53,6 +55,9 @@ export class OmiParser {
   private tokenList: IParsedToken[] = [];
   // 抽象语法树
   private program: ProgramNode | undefined;
+  // 类型声明
+  private declaredFormatMap: Map<string, FormatMapValue> = initFormatMap();
+  private usedFormatSet: Set<string> = new Set();
 
   setContent(value: string) {
     this.content = value;
@@ -67,6 +72,17 @@ export class OmiParser {
   // 行列信息，从0开始计算
   private row: number = 0;
   private col: number = 0;
+
+  getPosition() {
+    return {
+      index: this.index,
+      row: this.row,
+      col: this.col,
+    };
+  }
+  getCurrentToken() {
+    return this.currentToken;
+  }
 
   wIdentify() {
     const token = this.currentToken;
@@ -132,7 +148,6 @@ export class OmiParser {
           line: this.currentToken.row,
           startCharacter: this.currentToken.col,
           length: this.currentToken.token.length,
-          // TODO: 后续这里要根据Format Map动态确定是keyword还是struct
           tokenType: "type",
           tokenModifiers: [],
         });
@@ -152,6 +167,12 @@ export class OmiParser {
       repeated,
       body,
     };
+
+    // 若在定义变量前使用了format类型，将使用到的format记录在一个Set里，稍后进行校验
+    if (!this.declaredFormatMap.has(format!.token)) {
+      this.usedFormatSet.add(format!.token);
+    }
+
     return formatNode;
   }
 
@@ -277,6 +298,11 @@ export class OmiParser {
           tokenType: "function",
           tokenModifiers: [],
         });
+
+        const regex = /^(Get|Post|Put|Petch|Delete)[\w]+/;
+        if (!regex.test(identify.token)) {
+          throw new Error("函数必须以Method+Name的方式进行命名");
+        }
 
         body.push(identify);
         this.readToken();
@@ -539,6 +565,14 @@ export class OmiParser {
       identify: identify.token,
       content,
     };
+
+    if (this.declaredFormatMap.has(identify.token)) {
+      throw new Error(`不能在此处定义类型${identify.token}，因为它已被定义`);
+    } else {
+      this.declaredFormatMap.set(identify.token, {
+        origin: "declaration",
+      });
+    }
 
     return struct;
   }
@@ -817,6 +851,15 @@ export class OmiParser {
       formats,
       path: path!.path,
     };
+
+    formats.forEach((format) => {
+      if (this.declaredFormatMap.has(format)) {
+        throw new Error(`不能导入类型${format}，因为它已被定义`);
+      } else {
+        this.declaredFormatMap.set(format, { origin: "import" });
+      }
+    });
+
     return importDeclaration;
   }
 
@@ -872,10 +915,15 @@ export class OmiParser {
       start: 0,
       end: this.currentToken.end,
     };
+    this.usedFormatSet.forEach((key) => {
+      if (!this.declaredFormatMap.has(key)) {
+        throw new Error(`使用了未被定义的类型${key}`);
+      }
+    });
     return program;
   }
 
-  private errorHandler(func: () => any) {
+  private errorHandler(func: () => ProgramNode) {
     try {
       return func();
     } catch (e) {
@@ -884,16 +932,13 @@ export class OmiParser {
         `错误位置：第${this.row}行 第${this.col} 列 token: ${this.currentToken.token}`
       );
       console.error(e);
+      throw e;
     }
   }
 
   // 构建抽象语法树
   build(): ProgramNode {
-    this.program = this.errorHandler(() => this._build());
-    if (!this.program) {
-      throw new Error("构建语法树的过程中出现了未知错误");
-    }
-    return this.program;
+    return this.errorHandler(() => this._build());
   }
 
   getProgram() {
