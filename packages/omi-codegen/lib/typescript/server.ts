@@ -20,7 +20,9 @@ const generateFunction = (func: FunctionDeclarationNode) => {
 
 const generateService = (ast: ServiceDeclarationNode): string => {
   const row = [];
-  row.push(`export abstract class Unimpled${ast.identify}Controller {`);
+  row.push(
+    `export abstract class Unimpled${ast.identify}Controller extends BasicOmiController {`
+  );
   row.push(`  namespace: string = "${ast.identify}";`);
   for (const item of ast.content.body) {
     if (item.type === "FunctionDeclaration") {
@@ -38,7 +40,7 @@ const ServerGenerator = (program: ProgramNode): string => {
   let content = ``;
   content += staticComment;
   content += "\n";
-  content += `import { OmiServerCtx } from '@omi-stack/omi-server';`;
+  content += `import { OmiServerCtx, BasicOmiController } from '@omi-stack/omi-server';`;
   content += "\n";
   for (const item of program.body) {
     if (item.type === "ImportDeclaration") {

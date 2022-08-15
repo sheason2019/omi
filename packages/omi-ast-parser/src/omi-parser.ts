@@ -324,7 +324,7 @@ export class OmiParser {
 
     let method: Method | undefined;
     methods.forEach((loopMethod) => {
-      if (identify?.token.indexOf(loopMethod)) {
+      if (identify?.token.indexOf(loopMethod) === 0) {
         method = loopMethod;
       }
     });
