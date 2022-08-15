@@ -1,14 +1,27 @@
 {
-  "name": "omi-ast-parser",
+  "name": "@omi-stack/omi-ast-parser",
   "version": "0.1.0",
   "main": "./dist/index.js",
   "license": "MIT",
   "scripts": {
     "dev": "ts-node index.ts",
     "test": "ts-node index.test.ts",
+    "publish": "npm run build && npm publish --access public",
     "build": "tsc"
   },
   "dependencies": {
     "ts-node": "^10.9.1"
-  }
+  },
+  "types": "./dist/index.d.ts",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sheason2019/omi.git"
+  },
+  "author": "sheason",
+  "bugs": {
+    "url": "https://github.com/sheason2019/omi/issues"
+  },
+  "homepage": "https://github.com/sheason2019/omi#readme",
+  "description": ""
 }

@@ -1,14 +1,27 @@
 {
-  "name": "omi-client",
-  "version": "1.0.0",
+  "name": "@omi-stack/omi-client",
+  "version": "0.1.0",
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node index.ts",
+    "publish": "npm run build && npm publish --access public",
     "build": "tsc"
   },
   "license": "MIT",
   "dependencies": {
     "axios": "^0.27.2",
     "ts-node": "^10.9.1"
-  }
+  },
+  "types": "./dist/index.d.ts",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sheason2019/omi.git"
+  },
+  "author": "sheason",
+  "bugs": {
+    "url": "https://github.com/sheason2019/omi/issues"
+  },
+  "homepage": "https://github.com/sheason2019/omi#readme",
+  "description": ""
 }
