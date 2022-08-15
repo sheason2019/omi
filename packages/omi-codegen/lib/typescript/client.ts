@@ -6,6 +6,7 @@ import {
 import prettier from "prettier";
 import {
   generateArgumentsType,
+  generateImport,
   generateStruct,
   responseType,
   staticComment,
@@ -47,11 +48,17 @@ const ClientGenerator = (program: ProgramNode): string => {
   content.push(`import { AxiosRequestConfig } from "axios";`);
   content.push("");
   for (const item of program.body) {
+    if (item.type === "ImportDeclaration") {
+      content.push(generateImport(item, "client"));
+    }
     if (item.type === "StructDeclaration") {
       content.push(generateStruct(item));
     }
     if (item.type === "ServiceDeclaration") {
       content.push(generateService(item));
+    }
+    if (item.type === "Comments") {
+      content.push(item.content);
     }
   }
   return prettier.format(content.join("\n"), { parser: "typescript" });

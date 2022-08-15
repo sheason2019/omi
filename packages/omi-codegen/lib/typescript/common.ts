@@ -1,9 +1,25 @@
 import {
   FormatNode,
   FunctionArgumentsNode,
+  ImportDeclarationNode,
   StructDeclarationNode,
 } from "omi-ast-parser/dist/typings";
 import formatMap from "./format-map";
+
+const coreRegex = /(\w+)\.omi$/;
+export const generateImport = (
+  importNode: ImportDeclarationNode,
+  from: "client" | "server"
+) => {
+  const matches = coreRegex.exec(importNode.path);
+  if (!matches) {
+    console.error(importNode.path);
+    throw new Error("错误的导入地址");
+  }
+  const coreName = matches[1];
+  const formats = importNode.formats.join(",");
+  return `import { ${formats} } from "./${coreName}-${from}";`;
+};
 
 export const generateStruct = (ast: StructDeclarationNode): string => {
   const row = [];

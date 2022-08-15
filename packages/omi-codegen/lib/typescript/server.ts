@@ -6,6 +6,7 @@ import {
 import prettier from "prettier";
 import {
   generateArgumentsType,
+  generateImport,
   generateStruct,
   responseType,
   staticComment,
@@ -40,6 +41,9 @@ const ServerGenerator = (program: ProgramNode): string => {
   content += `import { OmiServerCtx } from 'omi-server';`;
   content += "\n";
   for (const item of program.body) {
+    if (item.type === "ImportDeclaration") {
+      content += generateImport(item, "server") + "\n";
+    }
     if (item.type === "StructDeclaration") {
       content += generateStruct(item) + "\n";
     }
