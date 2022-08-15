@@ -38,7 +38,7 @@ const ServerGenerator = (program: ProgramNode): string => {
   let content = ``;
   content += staticComment;
   content += "\n";
-  content += `import { OmiServerCtx } from 'omi-server';`;
+  content += `import { OmiServerCtx } from '@omi-stack/omi-server';`;
   content += "\n";
   for (const item of program.body) {
     if (item.type === "ImportDeclaration") {

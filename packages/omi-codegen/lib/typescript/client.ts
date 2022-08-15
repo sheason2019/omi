@@ -44,7 +44,7 @@ const ClientGenerator = (program: ProgramNode): string => {
   // 添加固定导入内容
   content.push(staticComment);
   content.push("");
-  content.push(`import { OmiClientBase } from 'omi-client';`);
+  content.push(`import { OmiClientBase } from '@omi-stack/omi-client';`);
   content.push(`import { AxiosRequestConfig } from "axios";`);
   content.push("");
   for (const item of program.body) {
