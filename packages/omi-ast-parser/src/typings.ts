@@ -5,6 +5,16 @@ export type Method = typeof methods[number];
 export interface TokenValue extends TokenNode {
   type: "Text";
   token: string;
+  row: number;
+  col: number;
+}
+
+export interface IParsedToken {
+  line: number;
+  startCharacter: number;
+  length: number;
+  tokenType: string;
+  tokenModifiers: string[];
 }
 
 export interface TokenNode {
@@ -26,6 +36,8 @@ export interface ProgramNode extends TokenNode {
 export interface CommentsNode extends TokenNode {
   type: "Comments";
   content: string;
+  row: number;
+  col: number;
   variant: "block" | "inline";
 }
 

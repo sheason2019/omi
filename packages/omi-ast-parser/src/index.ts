@@ -23,6 +23,7 @@ import {
   ImportDeclarationNode,
   ImportFormatNode,
   ImportPathNode,
+  IParsedToken,
   KeywordNode,
   Method,
   ProgramNode,
@@ -43,7 +44,15 @@ export class OmiParser {
     token: "",
     start: 0,
     end: 0,
+    row: 0,
+    col: 0,
   };
+
+  // *构建产物*
+  // Token队列
+  private tokenList: IParsedToken[] = [];
+  // 抽象语法树
+  private program: ProgramNode | undefined;
 
   setContent(value: string) {
     this.content = value;
@@ -55,6 +64,9 @@ export class OmiParser {
 
   // 状态机指针的位置信息
   private index: number = 0;
+  // 行列信息，从0开始计算
+  private row: number = 0;
+  private col: number = 0;
 
   wIdentify() {
     const token = this.currentToken;
@@ -86,9 +98,25 @@ export class OmiParser {
 
       if (status === FormatStatus.Properties) {
         if (this.currentToken.token === "repeated") {
+          this.tokenList.push({
+            line: this.currentToken.row,
+            startCharacter: this.currentToken.col,
+            length: this.currentToken.token.length,
+            tokenType: "format",
+            tokenModifiers: [],
+          });
+
           repeated = true;
           this.readToken();
         } else if (this.currentToken.token === "optional") {
+          this.tokenList.push({
+            line: this.currentToken.row,
+            startCharacter: this.currentToken.col,
+            length: this.currentToken.token.length,
+            tokenType: "format",
+            tokenModifiers: [],
+          });
+
           optional = true;
           this.readToken();
         } else {
@@ -99,6 +127,16 @@ export class OmiParser {
       }
       if (status === FormatStatus.Format) {
         format = this.currentToken;
+
+        this.tokenList.push({
+          line: this.currentToken.row,
+          startCharacter: this.currentToken.col,
+          length: this.currentToken.token.length,
+          // TODO: 后续这里要根据Format Map动态确定是keyword还是struct
+          tokenType: "type",
+          tokenModifiers: [],
+        });
+
         body.push(format);
         status = FormatStatus.Finish;
         continue;
@@ -141,6 +179,15 @@ export class OmiParser {
       }
       if (status === VariableStatus.Identify) {
         identify = this.wIdentify();
+
+        this.tokenList.push({
+          line: this.currentToken.row,
+          startCharacter: this.currentToken.col,
+          length: this.currentToken.token.length,
+          tokenType: "variable",
+          tokenModifiers: [],
+        });
+
         body.push(identify);
         this.readToken();
       }
@@ -222,6 +269,15 @@ export class OmiParser {
       }
       if (status === FunctionStatus.Identify) {
         identify = this.wIdentify();
+
+        this.tokenList.push({
+          line: this.currentToken.row,
+          startCharacter: this.currentToken.col,
+          length: this.currentToken.token.length,
+          tokenType: "function",
+          tokenModifiers: [],
+        });
+
         body.push(identify);
         this.readToken();
       }
@@ -353,6 +409,15 @@ export class OmiParser {
     let comment: CommentsNode | undefined;
     if (this.currentToken.token.indexOf("//") === 0) {
       comment = this.wCommentsRow();
+
+      this.tokenList.push({
+        line: comment.row,
+        startCharacter: comment.col,
+        length: comment.content.length,
+        tokenType: "comment",
+        tokenModifiers: [],
+      });
+
       this.readToken();
     } else if (this.currentToken.token.indexOf("/*") === 0) {
       comment = this.wCommentsBlock();
@@ -382,6 +447,15 @@ export class OmiParser {
       if (status === ServiceStatus.Keyword) {
         // 将声明关键词写入body
         const keyword = this.wKeyword();
+
+        this.tokenList.push({
+          line: this.currentToken.row,
+          startCharacter: this.currentToken.col,
+          length: this.currentToken.token.length,
+          tokenType: "keyword",
+          tokenModifiers: [],
+        });
+
         body.push(keyword);
         this.readToken();
         status++;
@@ -390,6 +464,15 @@ export class OmiParser {
       if (status === ServiceStatus.Identify) {
         // 写入service的名称
         identify = this.wIdentify();
+
+        this.tokenList.push({
+          line: this.currentToken.row,
+          startCharacter: this.currentToken.col,
+          length: this.currentToken.token.length,
+          tokenType: "class",
+          tokenModifiers: [],
+        });
+
         body.push(identify);
         this.readToken();
         status++;
@@ -422,10 +505,26 @@ export class OmiParser {
     const start = this.currentToken.start;
 
     const keyword = this.wKeyword();
+
+    this.tokenList.push({
+      line: this.currentToken.row,
+      startCharacter: this.currentToken.col,
+      length: this.currentToken.token.length,
+      tokenType: "keyword",
+      tokenModifiers: [],
+    });
     body.push(keyword);
 
     this.readToken();
     const identify = this.wIdentify();
+
+    this.tokenList.push({
+      line: this.currentToken.row,
+      startCharacter: this.currentToken.col,
+      length: this.currentToken.token.length,
+      tokenType: "struct",
+      tokenModifiers: [],
+    });
     body.push(identify);
 
     this.readToken();
@@ -471,6 +570,8 @@ export class OmiParser {
       type: "Comments",
       start: token.start,
       end: token.end + content.length,
+      row: token.row,
+      col: token.col,
       variant,
       content,
     };
@@ -506,9 +607,12 @@ export class OmiParser {
       type: "Comments",
       start: token.start,
       end: token.start + wordStash.length - 1,
+      row: token.row,
+      col: token.col,
       variant,
       content,
     };
+
     return comments;
   }
 
@@ -531,6 +635,15 @@ export class OmiParser {
         end: this.currentToken.end,
         format: this.currentToken.token,
       };
+
+      this.tokenList.push({
+        line: this.currentToken.row,
+        startCharacter: this.currentToken.col,
+        length: this.currentToken.token.length,
+        tokenType: "struct",
+        tokenModifiers: [],
+      });
+
       body.push(importFormat);
       formats.push(importFormat.format);
       const token = this.readToken();
@@ -598,6 +711,7 @@ export class OmiParser {
         continue;
       }
 
+      // 读import关键字
       if (status === ImportStatus.KeywordImport) {
         const keyword = this.wKeyword();
         if (keyword.identify !== "import") {
@@ -607,10 +721,20 @@ export class OmiParser {
           );
         }
         body.push(keyword);
+        this.tokenList.push({
+          line: this.currentToken.row,
+          startCharacter: this.currentToken.col,
+          length: this.currentToken.token.length,
+          tokenType: "keyword",
+          tokenModifiers: [],
+        });
+
         status = ImportStatus.Content;
         this.readToken();
         continue;
       }
+
+      // 读引入的数据结构声明
       if (status === ImportStatus.Content) {
         content = this.wImportContent();
         formats = content.formats;
@@ -619,6 +743,8 @@ export class OmiParser {
         this.readToken();
         continue;
       }
+
+      // 读from关键字
       if (status === ImportStatus.KeywordFrom) {
         const keyword = this.wKeyword();
         if (keyword.identify !== "from") {
@@ -627,23 +753,54 @@ export class OmiParser {
               keyword.identify
           );
         }
+
+        this.tokenList.push({
+          line: this.currentToken.row,
+          startCharacter: this.currentToken.col,
+          length: this.currentToken.token.length,
+          tokenType: "keyword",
+          tokenModifiers: [],
+        });
+
         body.push(keyword);
         status = ImportStatus.Path;
         this.readToken();
         continue;
       }
+
+      // 读import 路径
       if (status === ImportStatus.Path) {
         path = this.wImportPath();
+
+        this.tokenList.push({
+          line: this.currentToken.row,
+          startCharacter: this.currentToken.col,
+          length: this.currentToken.token.length,
+          tokenType: "string",
+          tokenModifiers: [],
+        });
+
         body.push(path);
         status = ImportStatus.EndToken;
         this.readToken();
         continue;
       }
+
+      // 读导入终止符
       if (status === ImportStatus.EndToken) {
         const token = this.currentToken;
         if (token.token !== ";") {
           throw new Error("Import 语句没有正确结束");
         }
+
+        this.tokenList.push({
+          line: this.currentToken.row,
+          startCharacter: this.currentToken.col,
+          length: this.currentToken.token.length,
+          tokenType: "label",
+          tokenModifiers: [],
+        });
+
         body.push(token);
         status = ImportStatus.Finish;
         this.readToken();
@@ -668,18 +825,14 @@ export class OmiParser {
     let status: ProgramStatus = ProgramStatus.Import;
     const body: ProgramNode["body"] = [];
 
+    this.readToken();
     while (this.index < this.content.length) {
-      const token = this.readToken();
+      const token = this.currentToken;
       let val: ProgramNode["body"][number] | undefined;
 
-      // 不管在什么情况下都可以写入注释
-      if (token.token.indexOf("//") === 0) {
-        val = this.wCommentsRow();
-        body.push(val);
-        continue;
-      } else if (token.token.indexOf("/*") === 0) {
-        val = this.wCommentsBlock();
-        body.push(val);
+      const comment = this.wComments();
+      if (comment) {
+        body.push(comment);
         continue;
       }
 
@@ -704,6 +857,7 @@ export class OmiParser {
         throw new Error("获取到了未定义的关键字");
       }
       body.push(val);
+      this.readToken();
     }
 
     return body;
@@ -725,17 +879,9 @@ export class OmiParser {
     try {
       return func();
     } catch (e) {
-      let row = 1;
-      let col = 1;
-      for (let i = 0; i < this.index; i++) {
-        col++;
-        if (this.content.charAt(i) === "\n") {
-          col = 0;
-          row++;
-        }
-      }
-      console.log(
-        `错误位置：第${row}行 第${col} 列 token: ${this.currentToken.token}`
+      console.error("token list:", this.tokenList);
+      console.error(
+        `错误位置：第${this.row}行 第${this.col} 列 token: ${this.currentToken.token}`
       );
       console.error(e);
     }
@@ -743,7 +889,21 @@ export class OmiParser {
 
   // 构建抽象语法树
   build(): ProgramNode {
-    return this.errorHandler(() => this._build());
+    this.program = this.errorHandler(() => this._build());
+    if (!this.program) {
+      throw new Error("构建语法树的过程中出现了未知错误");
+    }
+    return this.program;
+  }
+
+  getProgram() {
+    if (!this.program) {
+      throw new Error("构建语法树的过程中出现了未知错误");
+    }
+    return this.program;
+  }
+  getAllToken() {
+    return this.tokenList;
   }
 
   errorChecker() {
@@ -757,6 +917,13 @@ export class OmiParser {
     this.errorChecker();
     const char = this.content.charAt(this.index);
     if (char === " " || char === "\n") {
+      if (this.content.charAt(this.index) === "\n") {
+        this.row++;
+        this.col = 0;
+      } else {
+        this.col++;
+      }
+
       this.index++;
       return this.skipSpace();
     }
@@ -769,9 +936,13 @@ export class OmiParser {
     const char = this.content.charAt(this.index);
     if (signalChar.indexOf(char) !== -1) {
       this.index++;
+      this.col++;
+
       this.currentToken = {
         type: "Text",
         token: char,
+        row: this.row,
+        col: this.col,
         start,
         end: start + char.length - 1,
       };
@@ -789,6 +960,11 @@ export class OmiParser {
         const char = this.content.charAt(this.index);
         wordStash += char;
         this.index++;
+        this.col++;
+        if (this.content.charAt(this.index) === "\n") {
+          this.row++;
+          this.col = 0;
+        }
       }
     } else {
       while (
@@ -808,12 +984,15 @@ export class OmiParser {
         const char = this.content.charAt(this.index);
         wordStash += char;
         this.index++;
+        this.col++;
       }
     }
     this.currentToken = {
       type: "Text",
       token: wordStash,
       start,
+      row: this.row,
+      col: this.col - wordStash.length,
       end: start + wordStash.length - 1,
     };
     return this.currentToken;
