@@ -1,9 +1,9 @@
 import {
-  FormatNode,
-  FunctionArgumentsNode,
   ImportDeclarationNode,
   StructDeclarationNode,
-} from "omi-ast-parser/dist/typings";
+  FunctionArgumentsNode,
+  FormatNode,
+} from "@omi-stack/omi-ast-parser";
 import formatMap from "./format-map";
 
 const coreRegex = /(\w+)\.omi$/;

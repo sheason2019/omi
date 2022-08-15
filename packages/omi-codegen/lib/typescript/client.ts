@@ -1,8 +1,8 @@
 import {
   FunctionDeclarationNode,
-  ProgramNode,
   ServiceDeclarationNode,
-} from "omi-ast-parser/dist/typings";
+  ProgramNode,
+} from "@omi-stack/omi-ast-parser";
 import prettier from "prettier";
 import {
   generateArgumentsType,

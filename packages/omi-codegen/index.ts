@@ -1,12 +1,12 @@
 import * as fs from "fs";
 import crypto from "crypto";
-import { OmiParser } from "omi-ast-parser";
-import ClientGenerator from "./lib/typescript/client";
-import ServerGenerator from "./lib/typescript/server";
 import {
   ImportDeclarationNode,
+  OmiParser,
   ProgramNode,
-} from "omi-ast-parser/dist/typings";
+} from "@omi-stack/omi-ast-parser";
+import ClientGenerator from "./lib/typescript/client";
+import ServerGenerator from "./lib/typescript/server";
 
 export class OmiCodegen {
   // 为了避免在批量生成IDL遇到错误时仍旧生成没有错误的部分IDL，这里使用一个Map缓存语法树信息
