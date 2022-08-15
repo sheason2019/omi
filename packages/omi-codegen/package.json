@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "ts-node index.ts",
     "test": "ts-node lib/typescript/index.test.ts",
-    "publish": "npm run build && npm publish --access public",
     "build": "tsc"
   },
   "dependencies": {

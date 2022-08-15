@@ -5,7 +5,6 @@
   "license": "MIT",
   "scripts": {
     "dev": "ts-node index.ts",
-    "publish": "npm run build && npm publish --access public",
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
