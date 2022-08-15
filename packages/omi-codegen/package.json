@@ -1,6 +1,6 @@
 {
   "name": "@omi-stack/omi-codegen",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "main": "dist/index.js",
   "license": "MIT",
   "scripts": {
@@ -10,8 +10,8 @@
     "build": "tsc"
   },
   "dependencies": {
+    "@omi-stack/omi-ast-parser": "^0.1.3",
     "@types/prettier": "^2.7.0",
-    "@omi-stack/omi-ast-parser": "^0.1.0",
     "prettier": "^2.7.1",
     "ts-node": "^10.9.1"
   },
@@ -19,7 +19,6 @@
   "directories": {
     "lib": "lib"
   },
-  "devDependencies": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sheason2019/omi.git"
