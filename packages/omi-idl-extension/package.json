@@ -2,11 +2,19 @@
   "name": "omi-idl-extension",
   "displayName": "omi-idl-extension",
   "description": "",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "engines": {
     "vscode": "^1.70.0"
   },
+  "publisher": "sheason2019",
+  "vsce": {
+    "dependencies": true
+  },
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sheason2019/omi.git"
+  },
   "categories": [
     "Other"
   ],
@@ -31,6 +39,9 @@
       }
     ],
     "configurationDefaults": {
+      "[omi]": {
+        "editor.semanticHighlighting.enabled": true
+      },
       "editor.semanticTokenColorCustomizations": {
         "rules": {
           "format": "#569CD6"
