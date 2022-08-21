@@ -1,7 +1,9 @@
 node_modules
 
-src
+lib
 
 test-dist
 
 yarn.lock
+
+test-idl

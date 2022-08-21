@@ -2,6 +2,6 @@ import { OmiCodegen } from "./index";
 
 const codegen = new OmiCodegen();
 
-codegen.parse("../omi-example-idl/");
+codegen.parse("./test-idl/");
 
-codegen.toTypescript("both", "test-dist");
+codegen.toCSharp("server", "test-dist");

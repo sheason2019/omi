@@ -32,5 +32,6 @@
   },
   "homepage": "https://github.com/sheason2019/omi#readme",
   "description": "",
-  "gitHead": "7c6c12d799840f0db3f2ff679818beeed04ce305"
+  "gitHead": "7c6c12d799840f0db3f2ff679818beeed04ce305",
+  "devDependencies": {}
 }
