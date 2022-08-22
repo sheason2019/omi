@@ -1,6 +1,6 @@
 {
   "name": "@omi-stack/omi-client",
-  "version": "0.1.11",
+  "version": "0.2.0",
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node index.ts",
