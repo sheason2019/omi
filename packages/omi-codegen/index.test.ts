@@ -4,4 +4,4 @@ const codegen = new OmiCodegen();
 
 codegen.parse("./test-idl/");
 
-codegen.toCSharp("server", "test-dist");
+codegen.toTypescript("server", "test-dist");

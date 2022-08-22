@@ -2,10 +2,12 @@ import {
   FormatNode,
   FunctionArgumentsNode,
   FunctionDeclarationNode,
+  Method,
   ProgramNode,
   ServiceDeclarationNode,
   StructDeclarationNode,
 } from "@omi-stack/omi-ast-parser";
+import upperSnackMethodName from "../common/utils/upper-snack-method-name";
 import { staticComment } from "../typescript/common";
 import formatMap from "./format-map";
 
@@ -44,30 +46,49 @@ export const responseType = (format: FormatNode) => {
 export const generateArgumentsType = (
   args: FunctionArgumentsNode,
   funcName: string,
-  serviceIdentify: string
+  serviceIdentify: string,
+  method: Method
 ) => {
-  // 请求的参数是否为空
-  let isVoid = true;
-  // c#使用类获取参数时不能细分到字段，这里再自动生成一个Request类
-  const row: string[] = [];
-  const className = funcName + "Request";
-  row.push(`public class ${className} {`);
+  // 这里需要分两种情况来生成请求的参数
+
+  // 当请求类型为Post或Put时，自动生成聚合类型从请求体中获取请求值
+  if (["Post", "Put"].indexOf(method) !== -1) {
+    // 请求的参数是否为空
+    let isVoid = true;
+    // c#使用类获取参数时不能细分到字段，这里再自动生成一个Request类
+    const row: string[] = [];
+    const className = funcName + "Request";
+    row.push(`public class ${className} {`);
+    for (const item of args.body) {
+      if (item.type === "VariableDeclaration") {
+        isVoid = false;
+        row.push(
+          `public ${formatMap.get(item.format) ?? item.format}${
+            item.repeated ? "[]" : ""
+          }${item.optional ? "?" : ""} ${item.identify} { get; set; }`
+        );
+      }
+    }
+    row.push("}");
+    if (isVoid) {
+      return "";
+    }
+    requestDefineStack.push(row.join("\n"));
+    return serviceIdentify + "ControllerDefinition." + className + " req";
+  }
+
+  // 其余的请求类型直接把请求参数写入函数体中，让ASP.NET去自动获取
+  const format: string[] = [];
   for (const item of args.body) {
     if (item.type === "VariableDeclaration") {
-      isVoid = false;
-      row.push(
-        `public ${formatMap.get(item.format) ?? item.format}${
+      format.push(
+        `${formatMap.get(item.format) ?? item.format}${
           item.repeated ? "[]" : ""
-        }${item.optional ? "?" : ""} ${item.identify} { get; set; }`
+        }${item.optional ? "?" : ""} ${item.identify}`
       );
     }
   }
-  row.push("}");
-  if (isVoid) {
-    return "";
-  }
-  requestDefineStack.push(row.join("\n"));
-  return serviceIdentify + "ControllerDefinition." + className + " req";
+  return format.join(",");
 };
 
 const generateFunction = (
@@ -78,7 +99,8 @@ const generateFunction = (
   const args = generateArgumentsType(
     func.arguments,
     func.identify,
-    serviceIdentify
+    serviceIdentify,
+    func.method
   );
   return `public ${resp} ${func.identify}(${args});`;
 };
@@ -103,13 +125,10 @@ const generateDefinition = (service: ServiceDeclarationNode) => {
   row.push(`public static class ${service.identify}ControllerDefinition {`);
   for (const item of service.content.body) {
     if (item.type === "FunctionDeclaration") {
-      const name = item.identify
-        .replace(/([A-Z])/g, (a: string, b: string) => "_" + b.toLowerCase())
-        .substring(1)
-        .toUpperCase();
+      const name = upperSnackMethodName(item.identify) + "_PATH";
       const methodName = item.identify.replace(item.method, "");
       row.push(
-        `public const string ${name}_PATH = "${service.identify}.${methodName}";`
+        `public const string ${name} = "${service.identify}.${methodName}";`
       );
     }
   }

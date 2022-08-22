@@ -78,7 +78,7 @@ const timeStr = () => {
 };
 
 export const staticComment = `/**
-* 本文件由Omi.js自动生成，请勿随意改动
+* 本文件由Omi.js自动生成，谨慎改动！
 * 生成时间：${timeStr()}.
 */`;
 

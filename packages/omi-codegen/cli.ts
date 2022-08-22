@@ -3,7 +3,7 @@
 import { program } from "commander";
 import OmiCodegen from "./index";
 
-const allowLang = ["typescript", "ts"];
+const allowLang = ["typescript", "ts", "csharp", "cs"];
 
 program
   .option("-o, -out <out>", "codegen outDir")
@@ -55,6 +55,8 @@ const action = () => {
   }
   if (lang === "typescript" || lang === "ts") {
     codegen.toTypescript(target, outDir);
+  } else if (lang === "cs" || lang === "csharp") {
+    codegen.toCSharp(target, outDir);
   } else if (allowLang.indexOf(lang) === -1) {
     console.error(`当前允许的语言类型仅有：${allowLang}`);
     return;

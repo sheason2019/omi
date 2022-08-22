@@ -1,16 +1,14 @@
-// block
 struct Todo {
-  // variable block
-  string content; // variable inline
+  int id;
+  string content;
   boolean finish;
   int createTime;
 }
 
 // block
-service Todo { // function inline
-  // function block
+service Todo {
   repeated Todo GetTodoList();
-  void PostTodo(Todo todo);
+  void PostTodo(string content);
   void PutTodo(Todo todo);
-  void DeleteTodo(Todo todo);
+  void DeleteTodo(int id);
 }

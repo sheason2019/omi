@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "ts-node index.ts",
-    "test": "ts-node lib/typescript/index.test.ts",
+    "test": "ts-node ./index.test.ts",
     "build": "tsc"
   },
   "dependencies": {
