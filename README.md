@@ -1,103 +1,108 @@
-# Omi.js
+# 简介
 
-Omijs 是一个极简风格的 RESTful 接口框架，目的是通过特定语法编写的 IDL 文件来平衡前后端开发之间的上下游关系，同时以接近 RPC 的方式来为前后端提供互相通信的接口，以简化开发体验。
+Omi 是一套基于 RESTful 风格的接口层框架，用户在用指定语法编写 IDL 文件后，Omi Codegen 可以对 IDL 文件进行解析，为服务端生成接口和路由定义，为客户端生成带有类型提示的 Api 调用接口。
 
-Omijs 目前的功能要点主要分成下面几个模块：
+# 如何使用
 
-- Omi IDL
+首先需要安装 Omi-codegen 依赖。
 
-- Omi Codegen
+```
+$ npm install @omi-stack/omi-codegen -g
+```
 
-- Omi Client
-
-- Omi Server
-
-虽然功能看起来很多，但工作量其实不太大，至少我做到勉强能跑的 MVP 版本只花了大概三天左右的时间，这其中包括了设计和构思的时间，我甚至还在这期间抽出了将近一整天的时间来肝命运 2 的至日活动。
-
-所以……这个项目本质上还是挺速成的，虽然架构摆的规规整整的，但内部的很多实现其实相当随意，如果有写的不好的地方也请大家多多包涵。
-
-下面我就按模块顺序来笼统的讲解一下基于 Omijs 的开发流程到底是怎么样的吧。
-
-# 定义 Omi IDL
-
-就像是 Thrift 或是 Protobuf，Omi IDL 可以通过一种结构化的语言来描述前后端通信间所需要的数据结构以及接口名称。
-
-一个具有增删改查的 TODO IDL 文件如下所示：
+创建一个`todo.omi`文件。
 
 ```
 struct Todo {
+  int id;
   string content;
   boolean finish;
-  int32 createTime;
+  int createTime;
 }
 
+// block
 service Todo {
   repeated Todo GetTodoList();
-  void PostTodo(Todo todo);
+  void PostTodo(string content);
   void PutTodo(Todo todo);
-  void DeleteTodo(Todo todo);
+  void DeleteTodo(int id);
 }
 ```
 
-这样就定义好了一个 Todo 结构体和 Todo API，之后就可以通过 Codegen 解析这个文件生成可以实现通信的代码了。
+## 生成服务端文件
 
-需要注意的是，service 内部必须以 RESTful Method + url 的格式来定义方法名，并且 Method 必须是首字母大写、其余字母小写，否则 Codegen 的时候会报错，这个大概算是命名规范之一吧。
+在创建完`todo.omi`文件后，在目录下执行以下命令以生成服务端文件：
 
-# Omi Codegen
-
-目前 Codegen 还没有 CLI 工具，只能通过 nodejs 的方式引用 Codegen 类来解析 IDL 文件并生成对应的代码。
-
-一个简单的 Codegen 文件如下所示：
-
-```ts
-import * as fs from "fs";
-import OmiCodegen from "omi-codegen";
-
-const content = fs.readFileSync("../omi-example-idl/todo.omi").toString();
-
-const codegen = new OmiCodegen();
-
-codegen.setContent(content);
-codegen.toTypescript("server", "todo", "api-lib");
+```
+$ omi-codegen -o . -l ts -t server todo.omi
 ```
 
-从这个文件里应该能略微窥见 OmiCodegen 向外暴露的工作流程：
-
-1. 拿到指定的 Omi IDL 的内容
-
-2. 创建 OmiCodegen 实例
-
-3. 将 Omi IDL 的内容放到 OmiCodegen 内部，让它内部的方法能获取到指定的 IDL 内容
-
-4. 将 Omi IDL 转译成`server`端的内容，并创建一个`todo`文件，放置在`api-lib`目录下。
-
-目前 Codegen 可以生成`typescript`语言下的`client`和`server`两种接口类型。
-
-以上面的 todo IDL 为例，生成的产物如下所示。
+codegen 生成的内容应该如下所示：
 
 ```ts
-// 客户端产物 todo-client.ts
-
 /**
- * 本文件由Omi.js自动生成，请勿随意改动
- * 生成时间：2022年8月8日 11:47:44.
+ * 本文件由Omi.js自动生成，谨慎改动！
+ * 生成时间：2022年8月23日 17:43:36.
  */
-
-import { OmiClientBase } from "omi-client";
-import { AxiosRequestConfig } from "axios";
-
 export interface Todo {
+  id: number;
   content: string;
   finish: boolean;
   createTime: number;
 }
+// block
+export interface UnimpledTodoController {
+  GetTodoList(): Promise<Todo[]> | Todo[];
+  PostTodo(content: string): Promise<void> | void;
+  PutTodo(todo: Todo): Promise<void> | void;
+  DeleteTodo(id: number): Promise<void> | void;
+}
+export const TodoControllerDefinition = {
+  GET_TODO_LIST_PATH: "Todo.TodoList",
+  POST_TODO_PATH: "Todo.Todo",
+  PUT_TODO_PATH: "Todo.Todo",
+  DELETE_TODO_PATH: "Todo.Todo",
+} as const;
+```
+
+该接口如何使用可以移步示例代码：[Omi-example-server-node](https://github.com/sheason2019/omi-example/tree/master/packages/omi-example-server-node)。
+
+## 生成客户端文件
+
+在创建完`todo.omi`文件后，在目录下执行以下命令以生成客户端文件：
+
+```
+$ omi-codegen -o . -l ts -t client todo.omi
+```
+
+codegen 生成的内容应该如下所示：
+
+```ts
+/**
+ * 本文件由Omi.js自动生成，谨慎改动！
+ * 生成时间：2022年8月23日 17:53:39.
+ */
+
+import { OmiClientBase } from "@omi-stack/omi-client";
+import { AxiosRequestConfig } from "axios";
+
+export interface Todo {
+  id: number;
+  content: string;
+  finish: boolean;
+  createTime: number;
+}
+// block
 export class TodoClient extends OmiClientBase {
   GetTodoList(props: {}, option?: Omit<AxiosRequestConfig, "params">) {
     const url = "Todo.TodoList";
     const method = "Get";
     return this.request<Todo[]>(url, method, props, option);
   }
-  PostTodo(props: { todo: Todo }, option?: Omit<AxiosRequestConfig, "params">) {
+  PostTodo(
+    props: { content: string },
+    option?: Omit<AxiosRequestConfig, "params">
+  ) {
     const url = "Todo.Todo";
     const method = "Post";
     return this.request<void>(url, method, props, option);
@@ -108,7 +113,7 @@ export class TodoClient extends OmiClientBase {
     return this.request<void>(url, method, props, option);
   }
   DeleteTodo(
-    props: { todo: Todo },
+    props: { id: number },
     option?: Omit<AxiosRequestConfig, "params">
   ) {
     const url = "Todo.Todo";
@@ -118,142 +123,82 @@ export class TodoClient extends OmiClientBase {
 }
 ```
 
-```ts
-// 服务端产物todo-server.ts
+客户端生成的文件是一套经过封装的请求接口，它有一个依赖`@omi-stack/omi-client`，这个包的源码在该项目下的`omi-client-js`文件夹中，主要功能就是把 Axios 封装了一下，让 Codegen 只需要生成一些基本的信息就可以实现对指定网络接口的调用，并对调用结果提供基本的类型提示。
 
-/**
- * 本文件由Omi.js自动生成，请勿随意改动
- * 生成时间：2022年8月8日 23:45:2.
- */
+具体的使用方法可以参考示例代码的源码：[Omi-example-web](https://github.com/sheason2019/omi-example/tree/master/packages/omi-example-web)
 
-import { OmiLambda } from "omi-server";
+# 如何编写 Omi IDL 文件
 
-export interface Todo {
-  content: string;
-  finish: boolean;
-  createTime: number;
-}
-export abstract class UnimpledTodoController {
-  namespace: string = "Todo";
-  abstract GetTodoList(
-    ...args: Parameters<OmiLambda<{}, Todo[]>>
-  ): ReturnType<OmiLambda<{}, Todo[]>>;
-  abstract PostTodo(
-    ...args: Parameters<OmiLambda<{ todo: Todo }, void>>
-  ): ReturnType<OmiLambda<{ todo: Todo }, void>>;
-  abstract PutTodo(
-    ...args: Parameters<OmiLambda<{ todo: Todo }, void>>
-  ): ReturnType<OmiLambda<{ todo: Todo }, void>>;
-  abstract DeleteTodo(
-    ...args: Parameters<OmiLambda<{ todo: Todo }, void>>
-  ): ReturnType<OmiLambda<{ todo: Todo }, void>>;
-}
+Omi-IDL 的语法借鉴了 Protobuf，但在类型上比 Protobuf 弱很多，这一方面是因为在设计的时候有点前端优先的思维在作祟，另一方面是因为这个 IDL 工具没有序列化的需求，所以在类型支持这方面可以稍微宽松一点。
+
+目前支持的基础数据类型有以下几种：
+
+- int
+
+- double
+
+- string
+
+- void
+
+- boolean
+
+- float
+
+通过 Struct 关键字可以将它们组合成更复杂的类型：
+
 ```
-
-可以看到，虽然 Codegen 的产物很简单，但在文件内部，它们都引入了一些依赖包来保证自身的正常工作。
-
-除了 Axios 以外，剩下两个依赖都是在本地项目里构建的内部依赖。
-
-它们的意义是将各自端内可复用的功能完全抽象出来，让用户能以尽可能简洁的方式去实现通信接口，也让 Codegen 能以最小化的程度维护自己生成的内容，避免出错（因为我总是出错:D）。
-
-# Omi Client
-
-Omi Client 包其实没什么好讲的，经典 Typescript 封装 Axios。
-
-源码也就两个文件`index.ts`和`typings.ts`，这种东西我感觉直接看代码应该比文档效率高多了，直接略过吧。
-
-# Omi Server
-
-Omi Server 就不一样了，这个还是值得说道说道的。
-
-Omi Server 实际上是基于 Koa 实现的一层浅封装，结合了 Nestjs 和 gRPC 的一些独特优点以期望实现最简化的开发体验。
-
-下面是一个 Todo Server 的例子：
-
-```ts
-import OmiServer, { OmiLambda } from "omi-server";
-// codegen 生成的内容
-import { Todo, UnimpledTodoController } from "./api-lib/todo-server";
-
-const todos: Todo[] = [];
-
-// 用户实际编写的内容
-class TodoController extends UnimpledTodoController {
-  async PostTodo({ props }: OmiServerCtx<{ todo: Todo }>): Promise<void> {
-    const { todo } = props;
-    todos.push(todo);
-  }
-  async PutTodo({ props }: OmiServerCtx<{ todo: Todo }>): Promise<void> {
-    const { todo } = props;
-    for (const i in todos) {
-      if (todos[i].createTime === todo.createTime) {
-        todos[i] = todo;
-        break;
-      }
-    }
-  }
-  async DeleteTodo({ props }: OmiServerCtx<{ todo: Todo }>): Promise<void> {
-    const { todo } = props;
-    for (let i = 0; i < todos.length; i++) {
-      if (todos[i].createTime === todo.createTime) {
-        todos.splice(i, 1);
-        break;
-      }
-    }
-  }
-  async GetTodoList(ctx: OmiServerCtx<{}>): Promise<Todo[]> {
-    return todos;
-  }
-}
-
-// 将Controller Serve起来的声明
-const server = new OmiServer();
-server.appendController(TodoController);
-server.build();
-server.listen(8080);
-```
-
-这里的`UnimpledTodoController`就是之前 Codegen 生成的内容，有需要的话可以回去对照着看一下，或者是直接查看项目`packages/omi-example-server`的源码。
-
-这个用户态的设计其实是完全模仿 NestJS 实现的，比如在 Controller 类内部定义的函数，通过 return 或是 throw 就可以直接给用户传递请求的响应，免去了使用 ctx.body 声明带来的初学者理解成本。
-
-而在一些地方，OmiServer 做的又更加激进一点，比如 Controller 内部的方法名必须以`method`+路由的形式进行命名，同时 Controller 内部必须维护一个 namespace 字符串（这个通常由 Codegen 自动生成，只有在不使用 Codegen 的情况下才需要手动声明 namespace）。
-
-做好了这些准备工作以后，OmiServer 会在执行 Build 方法的时候去逐个实例化已使用 append 向它声明的 Controller 类（其实就是做了个控制反转），然后从实例化的 Controller 类里面逐个去获取方法名，并将其解析为 gRPC 风格的 url，如：`http://localhost/Todo.TodoList`。
-
-同时，在上面这个 Controller 的实现中，可以注意到每个方法的参数都是`({ props })`，这是因为在 OmiServer 里定义了一个中间件，把 Get 和 Post 类型的请求参数统统合并到了`ctx.props`这个对象中，以简化获取参数的步骤，所以，在 Controller 内声明的方法的参数其实都是 ctx 本身，这是值得注意的一点。
-
-同样的，受到工期制约，OmiServer 目前的实现也很不完全，它目前还没有中间件的能力，这算是很致命的一个缺陷了，我目前的想法是使用装饰器来实现（Nest.js？老东西等着爆金币吧。），期望的语法应该是像下面这样的：
-
-```ts
-// Controller级中间件
-@Use(AuthorMiddleware)
-class ExampleController extends UmimpledExampleController {
-  // 方法级中间件
-  @Use(AnotherMiddleware)
-  GetTest() {}
+struct Todo {
+  int id;
+  repeated string content;
+  boolean finish;
+  optional int createTime;
 }
 ```
 
-接下来几天会重点搞一下这个。
+在结构体中，可以使用`optional`关键字和`repeated`关键字来表示一个字段是否是`可选`或`数组`。
 
-# Example
+而 Web 接口的声明则需要用到`service`关键字，一个示范用例如下所示：
 
-这篇文档只是介绍了各个模块做了什么，以及未来会怎么做，总体来说其实更像是一篇笔记吧。
-
-写成这样一方面是因为这个项目仍处在 Demo 阶段，都完全没有成型，我贸然去写一篇煞有其事的说明书感觉用途也不大；而另一方面，则是我自己也有点混乱，不知道该怎么把 Omi 的全貌给表达出来。
-
-所以这里我就干脆写了个 Todo Example，直接用最淳朴的代码来展示一下怎么用这个框架吧。
-
-在项目路径下执行以下命令以初始化 example 项目：
-
-```sh
-# 安装依赖包
-$ yarn
-# 初始化内部依赖
-$ lerna run build
+```
+service Todo {
+  repeated Todo GetTodoList();
+  void PostTodo(string content);
+  void PutTodo(Todo todo);
+  void DeleteTodo(int id);
+}
 ```
 
-然后进入 omi-example-server 和 omi-example-web 项目，分别执行`yarn dev`启动项目即可。
+这个语法跟 Java 或 C#里的`interface`比较像，但是有一点额外的命名规范，即接口名的声明必须以`(Method类型)+(函数名称)`的格式来实现，并且 Method 类型一定要以大驼峰风格来编写，不然的话就会报错。
 
-查看`packages`目录下的`omi-example-*`项目，尝试修改`omi-example-idl`的内容，并在`omi-example-server`或`omi-example-web`中执行`yarn idl`命令，即可实现接口的迭代和同步。
+这个差不多可以算是个提示性的强制要求，保证 API 遵循最基本的 RESTFul 规范，毕竟这个项目目前还是很不稳定的，如果未来某一天我需要把 Omi 从项目里抽离出去，有最基本的 RESTFul 规范在，整个项目也不至于一夜间乱成一团。
+
+但很不好的一点是，这个设计可能会造成如`User.PostLogin()`、`User.DeleteLogout()`这样的奇怪操作，也许把这个命名规范作为一个软约束，不遵守规定的直接使用 POST 进行处理会更好一点？不管怎么说，目前就先这样摆着吧。
+
+同时，`import`操作肯定是需要支持的，在比较复杂的服务里往往需要对定义的结构体进行复用，这时候通过以下语法即可拿到在别的文件里定义的结构体。
+
+```
+import { Todo } from "./todo.omi";
+
+service Import {
+  Todo GetTodo(int id);
+}
+```
+
+# IDL 语法高亮支持
+
+在 VS Code 扩展商店搜索 omi-idl-extension 即可找到语法支持扩展，虽然有基本的高亮和错误提示，但目前的实现还比较简陋。
+
+# 多语言支持
+
+虽然 Omi IDL 在语法上被设计为语言无关，但受到工作量的制约，目前对多语言的支持还比较薄弱：
+
+- 服务端
+
+  - Typescript
+
+  - C#
+
+- 客户端
+
+  - Typescript

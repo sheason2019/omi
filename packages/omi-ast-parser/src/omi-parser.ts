@@ -837,7 +837,6 @@ export class OmiParser {
 
         body.push(token);
         status = ImportStatus.Finish;
-        this.readToken();
         continue;
       }
     }
