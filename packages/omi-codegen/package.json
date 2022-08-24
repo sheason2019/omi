@@ -1,6 +1,6 @@
 {
   "name": "@omi-stack/omi-codegen",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "main": "dist/index.js",
   "license": "MIT",
   "bin": {
@@ -12,7 +12,7 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@omi-stack/omi-ast-parser": "^0.2.3",
+    "@omi-stack/omi-ast-parser": "^0.2.4",
     "@types/prettier": "^2.7.0",
     "commander": "^9.4.0",
     "prettier": "^2.7.1",
