@@ -289,6 +289,13 @@ export class OmiParser {
         const identifyNode = this.wIdentify();
         body.push(identifyNode);
         identify = identifyNode.token;
+        this.tokenList.push({
+          line: this.currentToken.row,
+          startCharacter: this.currentToken.col,
+          length: this.currentToken.token.length,
+          tokenType: "variable",
+          tokenModifiers: [],
+        });
         this.readToken();
       }
       if (status === EnumOption.EndToken) {
@@ -402,12 +409,17 @@ export class OmiParser {
     }
     const body: ServiceContentNode["body"] = [];
 
+    let skip = false;
     while (true) {
-      this.readToken();
+      if (!skip) {
+        this.readToken();
+      }
+      skip = false;
 
       const comment = this.wComments();
       if (comment) {
         body.push(comment);
+        skip = true;
         continue;
       }
 
@@ -437,12 +449,17 @@ export class OmiParser {
     const body: EnumContentNode["body"] = [];
     const optionList: EnumContentNode["optionList"] = [];
 
+    let skip = false;
     while (true) {
-      this.readToken();
+      if (!skip) {
+        this.readToken();
+      }
+      skip = false;
 
       const comment = this.wComments();
       if (comment) {
         body.push(comment);
+        skip = true;
         continue;
       }
 
@@ -474,20 +491,26 @@ export class OmiParser {
     }
     const body: StructContentNode["body"] = [];
 
-    this.readToken();
+    let skip = false;
     while (true) {
+      if (!skip) {
+        this.readToken();
+      }
+      skip = false;
+
       const comment = this.wComments();
       if (comment) {
         body.push(comment);
+        skip = true;
         continue;
+      }
+
+      if (this.currentToken.token === "}") {
+        break;
       }
 
       const variable = this.wVariable([";", "}"]);
       body.push(variable);
-      const nextToken = this.readToken();
-      if (nextToken.token === "}") {
-        break;
-      }
     }
 
     const content: StructContentNode = {
