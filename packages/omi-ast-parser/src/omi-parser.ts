@@ -842,13 +842,19 @@ export class OmiParser {
     let body: ImportContentNode["body"] = [];
     let formats: ImportContentNode["formats"] = [];
 
-    this.readToken();
+    let skip = false;
     while (true) {
+      if (!skip) {
+        this.readToken();
+      }
+
       const comment = this.wComments();
       if (comment) {
         body.push(comment);
+        skip = true;
         continue;
       }
+      skip = false;
 
       const importFormat: ImportFormatNode = {
         type: "ImportFormatNode",
