@@ -6,6 +6,7 @@ import {
 import prettier from "prettier";
 import {
   generateArgumentsType,
+  generateEnum,
   generateImport,
   generateStruct,
   responseType,
@@ -56,6 +57,9 @@ const ClientGenerator = (program: ProgramNode): string => {
     }
     if (item.type === "ServiceDeclaration") {
       content.push(generateService(item));
+    }
+    if (item.type === "EnumDeclaration") {
+      content.push(generateEnum(item));
     }
     if (item.type === "Comments") {
       content.push(item.content);

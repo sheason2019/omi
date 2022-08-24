@@ -1,4 +1,6 @@
 import {
+  EnumContentNode,
+  EnumDeclarationNode,
   FormatNode,
   FunctionArgumentsNode,
   FunctionDeclarationNode,
@@ -102,7 +104,7 @@ const generateFunction = (
     serviceIdentify,
     func.method
   );
-  return `public ${resp} ${func.identify}(${args});`;
+  return `${resp} ${func.identify}(${args});`;
 };
 
 const generateService = (service: ServiceDeclarationNode) => {
@@ -142,6 +144,25 @@ const generateDefinition = (service: ServiceDeclarationNode) => {
   return row.join("\n");
 };
 
+const generateEnumContent = (ast: EnumContentNode) => {
+  const row: string[] = [];
+  for (const item of ast.body) {
+    if (item.type === "Comments") {
+      row.push(item.content);
+    }
+    if (item.type === "EnumOption") {
+      row.push(`${item.identify},`);
+    }
+  }
+  return row.join("\n");
+};
+
+export const generateEnum = (ast: EnumDeclarationNode) => {
+  return `enum ${ast.identify} {
+    ${generateEnumContent(ast.content)}
+  }`;
+};
+
 const ServerGenerator = (program: ProgramNode) => {
   let content = staticComment + "\n";
   content += `using Microsoft.AspNetCore.Mvc;\n`;
@@ -156,6 +177,9 @@ const ServerGenerator = (program: ProgramNode) => {
     if (item.type === "ServiceDeclaration") {
       content += generateService(item) + "\n";
       content += generateDefinition(item) + "\n";
+    }
+    if (item.type === "EnumDeclaration") {
+      content += generateEnum(item) + "\n";
     }
     if (item.type === "Comments") {
       content += item.content + "\n";

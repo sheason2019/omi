@@ -13,9 +13,14 @@ import {
   ServiceStatus,
   ProgramStatus,
   ImportStatus,
+  EnumStatus,
+  EnumOption,
 } from "./status";
 import {
   CommentsNode,
+  EnumContentNode,
+  EnumDeclarationNode,
+  EnumOptionNode,
   FormatMapValue,
   FormatNode,
   FunctionArgumentsNode,
@@ -266,6 +271,50 @@ export class OmiParser {
     };
   }
 
+  wEnumOption(): EnumOptionNode {
+    let status: EnumOption = EnumOption.Identify;
+
+    const body: EnumOptionNode["body"] = [];
+    let identify: string | undefined;
+    const start = this.currentToken.start;
+
+    while (status !== EnumOption.Finish) {
+      const comment = this.wComments();
+      if (comment) {
+        body.push(comment);
+        continue;
+      }
+
+      if (status === EnumOption.Identify) {
+        const identifyNode = this.wIdentify();
+        body.push(identifyNode);
+        identify = identifyNode.token;
+        this.readToken();
+      }
+      if (status === EnumOption.EndToken) {
+        const end = this.currentToken;
+        if (end.token !== ",") {
+          throw new Error("Enum可选项必须以逗号结尾");
+        }
+      }
+
+      status++;
+    }
+    const end = this.currentToken.end;
+
+    if (!identify) {
+      throw new Error("Enum可选项未声明名称");
+    }
+
+    return {
+      type: "EnumOption",
+      start,
+      end,
+      identify,
+      body,
+    };
+  }
+
   wFunction(): FunctionDeclarationNode {
     let status: FunctionStatus = FunctionStatus.ReturnType;
 
@@ -353,20 +402,21 @@ export class OmiParser {
     }
     const body: ServiceContentNode["body"] = [];
 
-    this.readToken();
     while (true) {
+      this.readToken();
+
       const comment = this.wComments();
       if (comment) {
         body.push(comment);
         continue;
       }
 
-      const func = this.wFunction();
-      body.push(func);
-      const nextToken = this.readToken();
-      if (nextToken.token === "}") {
+      if (this.currentToken.token === "}") {
         break;
       }
+
+      const func = this.wFunction();
+      body.push(func);
     }
 
     const content: ServiceContentNode = {
@@ -377,6 +427,44 @@ export class OmiParser {
     };
 
     return content;
+  }
+
+  wEnumContent(): EnumContentNode {
+    const token = this.currentToken;
+    if (token.token !== "{") {
+      throw new Error("Enum的声明内容必须被包裹在 {} 里");
+    }
+    const body: EnumContentNode["body"] = [];
+    const optionList: EnumContentNode["optionList"] = [];
+
+    while (true) {
+      this.readToken();
+
+      const comment = this.wComments();
+      if (comment) {
+        body.push(comment);
+        continue;
+      }
+
+      if (this.currentToken.token === "}") {
+        break;
+      }
+
+      const option = this.wEnumOption();
+      if (optionList.indexOf(option.identify) !== -1) {
+        throw new Error("Enum可选项不可重复命名");
+      }
+      optionList.push(option.identify);
+      body.push(option);
+    }
+
+    return {
+      start: token.start,
+      end: this.currentToken.end,
+      type: "EnumContent",
+      optionList,
+      body,
+    };
   }
 
   wStructContent() {
@@ -450,6 +538,82 @@ export class OmiParser {
       this.readToken();
     }
     return comment;
+  }
+
+  wEnum(): EnumDeclarationNode {
+    let status: EnumStatus = EnumStatus.Keyword;
+
+    const body: EnumDeclarationNode["body"] = [];
+
+    const start = this.currentToken.start;
+
+    let identify: IdentifyNode | undefined;
+    let content: EnumContentNode | undefined;
+
+    while (status !== EnumStatus.Finish) {
+      const comment = this.wComments();
+      if (comment) {
+        body.push(comment);
+        continue;
+      }
+
+      if (status === EnumStatus.Keyword) {
+        // 将声明关键词写入body
+        const keyword = this.wKeyword();
+
+        this.tokenList.push({
+          line: this.currentToken.row,
+          startCharacter: this.currentToken.col,
+          length: this.currentToken.token.length,
+          tokenType: "keyword",
+          tokenModifiers: [],
+        });
+
+        body.push(keyword);
+        this.readToken();
+        status++;
+        continue;
+      }
+
+      if (status === EnumStatus.Identify) {
+        identify = this.wIdentify();
+
+        this.tokenList.push({
+          line: this.currentToken.row,
+          startCharacter: this.currentToken.col,
+          length: this.currentToken.token.length,
+          tokenType: "class",
+          tokenModifiers: [],
+        });
+
+        body.push(identify);
+        this.readToken();
+        status++;
+        continue;
+      }
+
+      if (status === EnumStatus.Content) {
+        // 写入service的内容
+        content = this.wEnumContent();
+        body.push(content);
+        status++;
+        continue;
+      }
+    }
+
+    // 将定义的Enum写入类型Map中
+    this.declaredFormatMap.set(identify!.token, {
+      origin: "declaration",
+    });
+
+    return {
+      start,
+      end: this.currentToken.end,
+      type: "EnumDeclaration",
+      identify: identify!.token,
+      content: content!,
+      body,
+    };
   }
 
   // 构建Service语法树
@@ -893,6 +1057,8 @@ export class OmiParser {
           val = this.wService();
         } else if (token.token === "struct") {
           val = this.wStruct();
+        } else if (token.token === "enum") {
+          val = this.wEnum();
         }
       }
       if (!val) {

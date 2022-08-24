@@ -12,3 +12,8 @@ service Todo {
   void PutTodo(Todo todo);
   void DeleteTodo(int id);
 }
+
+enum TodoType {
+  Normal,
+  Topping,
+}

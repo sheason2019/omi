@@ -29,6 +29,7 @@ export interface ProgramNode extends TokenNode {
     | ServiceDeclarationNode
     | StructDeclarationNode
     | ImportDeclarationNode
+    | EnumDeclarationNode
     | CommentsNode
   )[];
 }
@@ -79,6 +80,25 @@ export interface VariableDeclarationNode extends TokenNode {
 export interface StructContentNode extends TokenNode {
   type: "StructContent";
   body: (VariableDeclarationNode | CommentsNode)[];
+}
+
+export interface EnumOptionNode extends TokenNode {
+  type: "EnumOption";
+  identify: string;
+  body: (IdentifyNode | CommentsNode)[];
+}
+
+export interface EnumContentNode extends TokenNode {
+  type: "EnumContent";
+  optionList: string[];
+  body: (EnumOptionNode | CommentsNode)[];
+}
+
+export interface EnumDeclarationNode extends TokenNode {
+  type: "EnumDeclaration";
+  identify: string;
+  content: EnumContentNode;
+  body: (KeywordNode | IdentifyNode | EnumContentNode | CommentsNode)[];
 }
 
 export interface ServiceDeclarationNode extends TokenNode {

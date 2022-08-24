@@ -3,8 +3,29 @@ import {
   StructDeclarationNode,
   FunctionArgumentsNode,
   FormatNode,
+  EnumContentNode,
+  EnumDeclarationNode,
 } from "@omi-stack/omi-ast-parser";
 import formatMap from "./format-map";
+
+const generateEnumContent = (ast: EnumContentNode) => {
+  const row: string[] = [];
+  for (const item of ast.body) {
+    if (item.type === "Comments") {
+      row.push(item.content);
+    }
+    if (item.type === "EnumOption") {
+      row.push(`${item.identify},`);
+    }
+  }
+  return row.join("\n");
+};
+
+export const generateEnum = (ast: EnumDeclarationNode) => {
+  return `enum ${ast.identify} {
+    ${generateEnumContent(ast.content)}
+  }`;
+};
 
 const coreRegex = /(\w+)\.omi$/;
 export const generateImport = (

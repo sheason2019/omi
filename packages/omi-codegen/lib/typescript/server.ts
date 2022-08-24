@@ -6,6 +6,7 @@ import {
 } from "@omi-stack/omi-ast-parser";
 import prettier from "prettier";
 import upperSnackMethodName from "../common/utils/upper-snack-method-name";
+import { generateEnum } from "./common";
 import {
   generateImport,
   generateStruct,
@@ -79,6 +80,9 @@ const ServerGenerator = (program: ProgramNode): string => {
     if (item.type === "ServiceDeclaration") {
       content += generateService(item) + "\n";
       content += generateDefinition(item) + "\n";
+    }
+    if (item.type === "EnumDeclaration") {
+      content += generateEnum(item) + "\n";
     }
     if (item.type === "Comments") {
       content += item.content + "\n";

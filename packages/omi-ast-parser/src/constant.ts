@@ -1,4 +1,10 @@
-export const keywords = ["struct", "service", "import", "from"] as const;
+export const keywords = [
+  "struct",
+  "service",
+  "import",
+  "from",
+  "enum",
+] as const;
 
 export const methods = ["Get", "Post", "Put", "Delete", "Patch"] as const;
 
