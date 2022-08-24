@@ -3,3 +3,8 @@ import { Todo } from "./todo.omi";
 service Import {
   Todo GetTodo(int id);
 }
+
+enum TodoType {
+  // User
+  Normal,
+}

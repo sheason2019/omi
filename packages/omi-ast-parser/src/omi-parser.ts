@@ -1069,7 +1069,11 @@ export class OmiParser {
       if (status === ProgramStatus.Import) {
         if (token.token === "import") {
           val = this.wImport();
-        } else if (token.token === "service" || token.token === "struct") {
+        } else if (
+          (<readonly string[]>keywords).indexOf(token.token) !== -1 &&
+          token.token !== "import" &&
+          token.token !== "from"
+        ) {
           status = ProgramStatus.Declare;
         }
       }
