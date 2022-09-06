@@ -8,12 +8,26 @@ import {
   ProgramNode,
   ServiceDeclarationNode,
   StructDeclarationNode,
+  VariableDeclarationNode,
 } from "@omi-stack/omi-ast-parser";
 import upperSnackMethodName from "../common/utils/upper-snack-method-name";
 import { staticComment } from "../typescript/common";
 import formatMap from "./format-map";
 
 const requestDefineStack: string[] = [];
+
+const variableDefaultValue = (ast: VariableDeclarationNode) => {
+  if (ast.repeated) {
+    return ` = new ${ast.format}[] {};`;
+  }
+  if (ast.format === "string") {
+    return ' = "";';
+  }
+  if (!formatMap.has(ast.format)) {
+    return ` = new ${ast.format}();`;
+  }
+  return "";
+};
 
 const generateStruct = (ast: StructDeclarationNode) => {
   const row = [];
@@ -23,7 +37,9 @@ const generateStruct = (ast: StructDeclarationNode) => {
       row.push(
         ` public ${formatMap.get(item.format) ?? item.format}${
           item.repeated ? "[]" : ""
-        }${item.optional ? "?" : ""} ${item.identify} { get; set; }`
+        }${item.optional ? "?" : ""} ${
+          item.identify
+        } { get; set; } ${variableDefaultValue(item)}`
       );
     }
     if (item.type === "Comments") {
@@ -67,7 +83,9 @@ export const generateArgumentsType = (
         row.push(
           `public ${formatMap.get(item.format) ?? item.format}${
             item.repeated ? "[]" : ""
-          }${item.optional ? "?" : ""} ${item.identify} { get; set; }`
+          }${item.optional ? "?" : ""} ${
+            item.identify
+          } { get; set; } ${variableDefaultValue(item)}`
         );
       }
     }
@@ -158,7 +176,7 @@ const generateEnumContent = (ast: EnumContentNode) => {
 };
 
 export const generateEnum = (ast: EnumDeclarationNode) => {
-  return `enum ${ast.identify} {
+  return `public enum ${ast.identify} {
     ${generateEnumContent(ast.content)}
   }`;
 };

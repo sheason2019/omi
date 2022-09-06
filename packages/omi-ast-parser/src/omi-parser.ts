@@ -355,9 +355,15 @@ export class OmiParser {
           tokenModifiers: [],
         });
 
-        const regex = /^(Get|Post|Put|Petch|Delete)[\w]+/;
-        if (!regex.test(identify.token)) {
-          throw new Error("函数必须以Method+Name的方式进行命名");
+        const upperRegex = /^(GET|POST|PUT|PATCH|DELETE)[\w]+/;
+        const regex = /^(Get|Post|Put|Patch|Delete)[\w]+/;
+        if (
+          upperRegex.test(identify.token.toUpperCase()) &&
+          !regex.test(identify.token)
+        ) {
+          throw new Error(
+            "若要使用Method+Name的方式进行命名，则Method必须以大驼峰形式进行书写"
+          );
         }
 
         body.push(identify);
@@ -378,15 +384,13 @@ export class OmiParser {
       status++;
     }
 
-    let method: Method | undefined;
+    // 若用户没有在名称里定义Method，则默认使用Post Method
+    let method: Method = "Post";
     methods.forEach((loopMethod) => {
       if (identify?.token.indexOf(loopMethod) === 0) {
         method = loopMethod;
       }
     });
-    if (!method) {
-      throw new Error(`函数 ${identify?.token} 未定义正确的Method类型`);
-    }
 
     const func: FunctionDeclarationNode = {
       type: "FunctionDeclaration",

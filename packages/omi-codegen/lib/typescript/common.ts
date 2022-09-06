@@ -22,7 +22,7 @@ const generateEnumContent = (ast: EnumContentNode) => {
 };
 
 export const generateEnum = (ast: EnumDeclarationNode) => {
-  return `enum ${ast.identify} {
+  return `export enum ${ast.identify} {
     ${generateEnumContent(ast.content)}
   }`;
 };

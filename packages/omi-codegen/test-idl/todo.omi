@@ -11,6 +11,7 @@ service Todo {
   void PostTodo(string content);
   void PutTodo(Todo todo);
   void DeleteTodo(int id);
+  void Login();
 }
 
 enum TodoType {
