@@ -1,9 +1,7 @@
 import {
-  VariableDeclarationNode,
   StructDeclarationNode,
   FormatNode,
   FunctionArgumentsNode,
-  Method,
   FunctionDeclarationNode,
   ServiceDeclarationNode,
   EnumContentNode,
@@ -14,17 +12,13 @@ import upperSnackMethodName from "../common/utils/upper-snack-method-name";
 import { staticComment } from "../typescript/common";
 import formatMap from "./format-map";
 
-const variableDefaultValue = (ast: VariableDeclarationNode) => {
-  if (ast.repeated) {
-    return ` = new ${ast.format}[] {};`;
-  }
-  if (ast.format === "string") {
-    return ' = "";';
-  }
-  if (!formatMap.has(ast.format)) {
-    return ` = new ${ast.format}();`;
-  }
-  return "";
+const setFormatFlag = (format: string) => {
+  return `%{format:${format}}%`;
+};
+const parseFormatFlag = (content: string) => {
+  return content.replaceAll(/%\{format:(\w+)\}%/g, (match, identify) => {
+    return formatMap.get(identify) ?? identify;
+  });
 };
 
 const generateStruct = (ast: StructDeclarationNode) => {
@@ -33,9 +27,9 @@ const generateStruct = (ast: StructDeclarationNode) => {
   for (const item of ast.content.body) {
     if (item.type === "VariableDeclaration") {
       row.push(
-        `${item.identify} ${item.repeated ? "[]" : ""}${
-          formatMap.get(item.format) ?? item.format
-        }`
+        `${item.identify} ${item.repeated ? "[]" : ""}${setFormatFlag(
+          item.format
+        )} \`json:"${item.identify}"\``
       );
     }
     if (item.type === "Comments") {
@@ -51,9 +45,7 @@ const generateStruct = (ast: StructDeclarationNode) => {
 };
 
 export const responseType = (format: FormatNode) => {
-  const val = `${format.repeated ? "[]" : ""}${
-    formatMap.get(format.format) ?? format.format
-  }`;
+  const val = `${format.repeated ? "[]" : ""}${setFormatFlag(format.format)}`;
   return val === "void" ? "" : val;
 };
 
@@ -63,7 +55,7 @@ export const generateArgumentsType = (args: FunctionArgumentsNode) => {
   for (const item of args.body) {
     if (item.type === "VariableDeclaration") {
       format.push(
-        `${item.identify} ${formatMap.get(item.format) ?? item.format}${
+        `${item.identify} ${setFormatFlag(item.format)}${
           item.repeated ? "[]" : ""
         }`
       );
@@ -98,7 +90,7 @@ const generateService = (service: ServiceDeclarationNode) => {
 
 const generateDefinition = (service: ServiceDeclarationNode) => {
   const row = [];
-  row.push(`type _${service.identify}Definition struct {`);
+  row.push(`type Type${service.identify}Definition struct {`);
   for (const item of service.content.body) {
     if (item.type === "FunctionDeclaration") {
       const name = upperSnackMethodName(item.identify) + "_PATH";
@@ -109,7 +101,7 @@ const generateDefinition = (service: ServiceDeclarationNode) => {
   row.push("}");
 
   row.push(
-    `var ${service.identify}Definition = &_${service.identify}Definition{`
+    `var ${service.identify}Definition = &Type${service.identify}Definition{`
   );
   for (const item of service.content.body) {
     if (item.type === "FunctionDeclaration") {
@@ -135,13 +127,31 @@ const generateEnumContent = (ast: EnumContentNode) => {
   return row.join("\n");
 };
 
+const generateEnumValue = (ast: EnumContentNode) => {
+  const row: string[] = [];
+  let value = 0;
+  for (const item of ast.body) {
+    if (item.type === "EnumOption") {
+      row.push(`${item.identify}: ${value++},`);
+    }
+  }
+  return row.join("\n");
+};
+
 // enum分为两步，一步定义结构体，一步定义Value
 export const generateEnum = (ast: EnumDeclarationNode) => {
   const row = [];
-  const struct = `type ${ast.identify} struct {
+  const struct = `type S${ast.identify} struct {
     ${generateEnumContent(ast.content)}
   }`;
   row.push(struct);
+
+  const value = `var ${ast.identify} = &S${ast.identify} {
+    ${generateEnumValue(ast.content)}
+  }`;
+  row.push(value);
+
+  formatMap.set(ast.identify, "int");
 
   return row.join("\n");
 };
@@ -166,6 +176,6 @@ const GolangServerGenerator = (program: ProgramNode) => {
       content += item.content + "\n";
     }
   }
-  return content;
+  return parseFormatFlag(content);
 };
 export default GolangServerGenerator;

@@ -3,6 +3,7 @@ struct Todo {
   string content;
   boolean finish;
   int createTime;
+  TodoType todoType;
 }
 
 // block
