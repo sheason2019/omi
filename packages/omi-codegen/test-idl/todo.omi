@@ -6,7 +6,7 @@ struct Todo {
 }
 
 // block
-service Todo {
+service ITodo {
   repeated Todo GetTodoList();
   void PostTodo(string content);
   void PutTodo(Todo todo);

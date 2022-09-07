@@ -8,6 +8,7 @@ import {
 import TSClientGenerator from "./lib/typescript/client";
 import TSServerGenerator from "./lib/typescript/server";
 import CSServerGenerator from "./lib/csharp/server";
+import GolangServerGenerator from "./lib/golang/server";
 
 export class OmiCodegen {
   // 为了避免在批量生成IDL遇到错误时仍旧生成没有错误的部分IDL，这里使用一个Map缓存语法树信息
@@ -149,6 +150,32 @@ export class OmiCodegen {
         contents.client = TSClientGenerator(program);
         outputMap.set(`${targetDir}/${key}-client.ts`, contents.client);
       }
+    });
+
+    outputMap.forEach((content, key) => {
+      fs.writeFileSync(key, outputMap.get(key)!);
+    });
+  }
+
+  toGo(target: "server", targetDir: string) {
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir);
+    }
+
+    // 这里做一层缓存，确保Codegen一定是在IDL全部解析正确的情况下，才会生成到用户的硬盘里
+    const outputMap = new Map<string, string>();
+
+    this.codegenMap.forEach((program, key) => {
+      if (!program) {
+        throw new Error("没有可用的语法树");
+      }
+      const contents = {
+        client: "",
+        server: "",
+      };
+
+      contents.server = GolangServerGenerator(program);
+      outputMap.set(`${targetDir}/${key}-server.go`, contents.server);
     });
 
     outputMap.forEach((content, key) => {
