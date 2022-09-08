@@ -12,6 +12,9 @@ import upperSnackMethodName from "../common/utils/upper-snack-method-name";
 import { staticComment } from "../typescript/common";
 import formatMap from "./format-map";
 
+// 通过函数参数生成一个便于Gin框架的bindJSON绑定的Request数据类型
+const requestTypeStack = <string[]>[];
+
 const setFormatFlag = (format: string) => {
   return `%{format:${format}}%`;
 };
@@ -50,26 +53,48 @@ export const responseType = (format: FormatNode) => {
 };
 
 export const generateArgumentsType = (args: FunctionArgumentsNode) => {
-  // 其余的请求类型直接把请求参数写入函数体中，让ASP.NET去自动获取
   const format: string[] = [];
   for (const item of args.body) {
     if (item.type === "VariableDeclaration") {
       format.push(
-        `${item.identify} ${setFormatFlag(item.format)}${
-          item.repeated ? "[]" : ""
-        }`
+        `${item.identify} ${item.repeated ? "[]" : ""}${setFormatFlag(
+          item.format
+        )}`
       );
     }
   }
   return format.join(",");
 };
 
-const generateFunction = (
-  func: FunctionDeclarationNode,
-  serviceIdentify: string
-) => {
+// Golang的public需要通过首字母大写来实现
+const firstLetterUppercase = (str: string) => {
+  return str[0].toUpperCase() + str.substring(1);
+};
+
+const addRequestType = (args: FunctionArgumentsNode, funcIdentify: string) => {
+  let variableCount = 0;
+  const row: string[] = [];
+  row.push(`type ${funcIdentify}Request struct {`);
+  for (const item of args.body) {
+    if (item.type === "VariableDeclaration") {
+      row.push(
+        `${firstLetterUppercase(item.identify)} ${
+          item.repeated ? "[]" : ""
+        }${setFormatFlag(item.format)} \`json:"${item.identify}"\``
+      );
+      variableCount++;
+    }
+  }
+  row.push("}");
+  if (variableCount > 0) {
+    requestTypeStack.push(row.join("\n"));
+  }
+};
+
+const generateFunction = (func: FunctionDeclarationNode) => {
   const resp = responseType(func.returnType);
   const args = generateArgumentsType(func.arguments);
+  addRequestType(func.arguments, func.identify);
   return `${func.identify}(${args}) ${resp}`;
 };
 
@@ -78,7 +103,7 @@ const generateService = (service: ServiceDeclarationNode) => {
   row.push(`type ${service.identify} interface {`);
   for (const item of service.content.body) {
     if (item.type === "FunctionDeclaration") {
-      row.push(generateFunction(item, service.identify));
+      row.push(generateFunction(item));
     }
     if (item.type === "Comments") {
       if (item.variant === "block") row.push(item.content);
@@ -176,6 +201,11 @@ const GolangServerGenerator = (program: ProgramNode) => {
       content += item.content + "\n";
     }
   }
+
+  while (requestTypeStack.length > 0) {
+    content += requestTypeStack.pop() + "\n";
+  }
+
   return parseFormatFlag(content);
 };
 export default GolangServerGenerator;
