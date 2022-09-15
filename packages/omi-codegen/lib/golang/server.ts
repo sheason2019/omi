@@ -7,6 +7,7 @@ import {
   EnumContentNode,
   EnumDeclarationNode,
   ProgramNode,
+  Method,
 } from "@omi-stack/omi-ast-parser";
 import upperSnackMethodName from "../common/utils/upper-snack-method-name";
 import { staticComment } from "../typescript/common";
@@ -53,7 +54,7 @@ export const responseType = (format: FormatNode) => {
 };
 
 export const generateArgumentsType = (args: FunctionArgumentsNode) => {
-  const format: string[] = [];
+  const format: string[] = ["ctx *gin.Context"];
   for (const item of args.body) {
     if (item.type === "VariableDeclaration") {
       format.push(
@@ -71,8 +72,18 @@ const firstLetterUppercase = (str: string) => {
   return str[0].toUpperCase() + str.substring(1);
 };
 
-const addRequestType = (args: FunctionArgumentsNode, funcIdentify: string) => {
+const addRequestType = (
+  args: FunctionArgumentsNode,
+  funcIdentify: string,
+  method: Method
+) => {
   let variableCount = 0;
+  let bindMehod: string;
+  if (method === "Get" || method === "Delete") {
+    bindMehod = "form";
+  } else {
+    bindMehod = "json";
+  }
   const row: string[] = [];
   row.push(`type ${funcIdentify}Request struct {`);
   for (const item of args.body) {
@@ -80,7 +91,7 @@ const addRequestType = (args: FunctionArgumentsNode, funcIdentify: string) => {
       row.push(
         `${firstLetterUppercase(item.identify)} ${
           item.repeated ? "[]" : ""
-        }${setFormatFlag(item.format)} \`json:"${item.identify}"\``
+        }${setFormatFlag(item.format)} \`${bindMehod}:"${item.identify}"\``
       );
       variableCount++;
     }
@@ -94,7 +105,7 @@ const addRequestType = (args: FunctionArgumentsNode, funcIdentify: string) => {
 const generateFunction = (func: FunctionDeclarationNode) => {
   const resp = responseType(func.returnType);
   const args = generateArgumentsType(func.arguments);
-  addRequestType(func.arguments, func.identify);
+  addRequestType(func.arguments, func.identify, func.method);
   return `${func.identify}(${args}) ${resp}`;
 };
 
@@ -181,16 +192,34 @@ export const generateEnum = (ast: EnumDeclarationNode) => {
   return row.join("\n");
 };
 
+// 因为某些IDL可能只有数据结构存在，它们的生成产物不需要引入gin框架的ctx
+// 所以这里使用注释的方式标注出Import内容的插入位置
+// 在需要插入Import内容时使用Replace方法将Import内容写进去
+const STATIC_IMPORT_SLOT = "// [%STATIC_IMPORT SLOT%]";
+
+const staticImport = () => {
+  const row = [];
+  row.push("import (");
+  row.push('"github.com/gin-gonic/gin"');
+  row.push(")");
+  return row.join("\n");
+};
+
 const GolangServerGenerator = (program: ProgramNode) => {
   let content = staticComment + "\n";
 
+  let shouldAddImport = false;
+
   content += `package omi\n`;
+
+  content += STATIC_IMPORT_SLOT + "\n\n";
 
   for (const item of program.body) {
     if (item.type === "StructDeclaration") {
       content += generateStruct(item) + "\n";
     }
     if (item.type === "ServiceDeclaration") {
+      shouldAddImport = true;
       content += generateService(item) + "\n";
       content += generateDefinition(item) + "\n";
     }
@@ -204,6 +233,10 @@ const GolangServerGenerator = (program: ProgramNode) => {
 
   while (requestTypeStack.length > 0) {
     content += requestTypeStack.pop() + "\n";
+  }
+
+  if (shouldAddImport) {
+    content = content.replace(STATIC_IMPORT_SLOT, staticImport());
   }
 
   return parseFormatFlag(content);

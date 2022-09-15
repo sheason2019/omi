@@ -55,14 +55,20 @@ export abstract class OmiClientBase {
     }
     if (instance) {
       this.axiosInstance = instance;
-    } else if (OmiClientBase.defaultAxiosInstance) {
-      this.axiosInstance = OmiClientBase.defaultAxiosInstance;
-    } else {
-      this.axiosInstance = axios.create();
     }
   }
 
-  axiosInstance: AxiosInstance;
+  axiosInstance: AxiosInstance | undefined;
+
+  getAxiosInstance(): AxiosInstance {
+    if (this.axiosInstance) {
+      return this.axiosInstance;
+    }
+    if (OmiClientBase.defaultAxiosInstance) {
+      return OmiClientBase.defaultAxiosInstance;
+    }
+    return axios.create();
+  }
 
   host: string = "/";
 
@@ -72,17 +78,18 @@ export abstract class OmiClientBase {
     props: any,
     option?: Omit<AxiosRequestConfig, "params">
   ): Promise<[OmiError, null] | [null, ResponseType]> {
+    const axiosInstance = this.getAxiosInstance();
     try {
       const url = this.host + path;
       if (method === "Get") {
-        const res = await this.axiosInstance.get<ResponseType>(url, {
+        const res = await axiosInstance.get<ResponseType>(url, {
           ...this.getOption(option),
           params: props,
         });
         return [null, res.data];
       }
       if (method === "Post") {
-        const res = await this.axiosInstance.post<ResponseType>(
+        const res = await axiosInstance.post<ResponseType>(
           url,
           props,
           this.getOption(option)
@@ -90,14 +97,14 @@ export abstract class OmiClientBase {
         return [null, res.data];
       }
       if (method === "Delete") {
-        const res = await this.axiosInstance.delete<ResponseType>(url, {
+        const res = await axiosInstance.delete<ResponseType>(url, {
           ...this.getOption(option),
           params: props,
         });
         return [null, res.data];
       }
       if (method === "Patch") {
-        const res = await this.axiosInstance.patch<ResponseType>(
+        const res = await axiosInstance.patch<ResponseType>(
           url,
           props,
           this.getOption(option)
@@ -105,7 +112,7 @@ export abstract class OmiClientBase {
         return [null, res.data];
       }
       if (method === "Put") {
-        const res = await this.axiosInstance.put<ResponseType>(
+        const res = await axiosInstance.put<ResponseType>(
           url,
           props,
           this.getOption(option)
