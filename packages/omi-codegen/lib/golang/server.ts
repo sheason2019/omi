@@ -31,9 +31,9 @@ const generateStruct = (ast: StructDeclarationNode) => {
   for (const item of ast.content.body) {
     if (item.type === "VariableDeclaration") {
       row.push(
-        `${item.identify} ${item.repeated ? "[]" : ""}${setFormatFlag(
+        `${item.identify} *${item.repeated ? "[]" : ""}${setFormatFlag(
           item.format
-        )} \`json:"${item.identify}"\``
+        )}`
       );
     }
     if (item.type === "Comments") {
