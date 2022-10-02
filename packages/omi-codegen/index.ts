@@ -9,6 +9,7 @@ import TSClientGenerator from "./lib/typescript/client";
 import TSServerGenerator from "./lib/typescript/server";
 import CSServerGenerator from "./lib/csharp/server";
 import GolangServerGenerator from "./lib/golang/server";
+import GolangCommonGenerator from "./lib/golang/common";
 
 export class OmiCodegen {
   // 为了避免在批量生成IDL遇到错误时仍旧生成没有错误的部分IDL，这里使用一个Map缓存语法树信息
@@ -170,11 +171,15 @@ export class OmiCodegen {
         throw new Error("没有可用的语法树");
       }
       const contents = {
+        common: "",
         client: "",
         server: "",
       };
 
+      contents.common = GolangCommonGenerator(program);
       contents.server = GolangServerGenerator(program);
+
+      outputMap.set(`${targetDir}/${key}-common.go`, contents.common);
       outputMap.set(`${targetDir}/${key}-server.go`, contents.server);
     });
 

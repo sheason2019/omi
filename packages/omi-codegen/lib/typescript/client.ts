@@ -41,31 +41,49 @@ const generateService = (service: ServiceDeclarationNode) => {
 };
 
 const ClientGenerator = (program: ProgramNode): string => {
-  const content: string[] = [];
+  let hasService = false;
+
+  const row: string[] = [];
   // 添加固定导入内容
-  content.push(staticComment);
-  content.push("");
-  content.push(`import { OmiClientBase } from '@omi-stack/omi-client';`);
-  content.push(`import { AxiosRequestConfig } from "axios";`);
-  content.push("");
+  row.push(staticComment);
+  row.push("");
+  row.push(NET_WORK_FLAG);
+  row.push("");
   for (const item of program.body) {
     if (item.type === "ImportDeclaration") {
-      content.push(generateImport(item, "client"));
+      row.push(generateImport(item, "client"));
     }
     if (item.type === "StructDeclaration") {
-      content.push(generateStruct(item));
+      row.push(generateStruct(item));
     }
     if (item.type === "ServiceDeclaration") {
-      content.push(generateService(item));
+      row.push(generateService(item));
+      hasService = true;
     }
     if (item.type === "EnumDeclaration") {
-      content.push(generateEnum(item));
+      row.push(generateEnum(item));
     }
     if (item.type === "Comments") {
-      content.push(item.content);
+      row.push(item.content);
     }
   }
-  return prettier.format(content.join("\n"), { parser: "typescript" });
+
+  let content = row.join("\n");
+
+  if (hasService) {
+    const row: string[] = [];
+    row.push(`import { OmiClientBase } from '@omi-stack/omi-client';`);
+    row.push(`import { AxiosRequestConfig } from "axios";`);
+    const netImport = row.join('\n');
+    content = content.replace(NET_WORK_FLAG, netImport);
+  } else {
+    content = content.replace(NET_WORK_FLAG, '');
+  }
+
+  return prettier.format(content, { parser: "typescript" });
 };
+
+// 根据IDL文件是否生成Service接口确定是否需要引入axios
+const NET_WORK_FLAG = "<%NET_WORK_FLAG%>"
 
 export default ClientGenerator;

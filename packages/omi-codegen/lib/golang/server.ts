@@ -1,11 +1,8 @@
 import {
-  StructDeclarationNode,
   FormatNode,
   FunctionArgumentsNode,
   FunctionDeclarationNode,
   ServiceDeclarationNode,
-  EnumContentNode,
-  EnumDeclarationNode,
   ProgramNode,
   Method,
 } from "@omi-stack/omi-ast-parser";
@@ -23,29 +20,6 @@ const parseFormatFlag = (content: string) => {
   return content.replaceAll(/%\{format:(\w+)\}%/g, (match, identify) => {
     return formatMap.get(identify) ?? identify;
   });
-};
-
-const generateStruct = (ast: StructDeclarationNode) => {
-  const row = [];
-  row.push(`type ${ast.identify} struct {`);
-  for (const item of ast.content.body) {
-    if (item.type === "VariableDeclaration") {
-      row.push(
-        `${item.identify} *${item.repeated ? "[]" : ""}${setFormatFlag(
-          item.format
-        )}`
-      );
-    }
-    if (item.type === "Comments") {
-      if (item.variant === "block") {
-        row.push(item.content);
-      } else if (item.variant === "inline") {
-        row[row.length - 1] += ` ${item.content}`;
-      }
-    }
-  }
-  row.push("}");
-  return row.join("\n");
 };
 
 export const responseType = (format: FormatNode) => {
@@ -150,48 +124,6 @@ const generateDefinition = (service: ServiceDeclarationNode) => {
   return row.join("\n");
 };
 
-const generateEnumContent = (ast: EnumContentNode) => {
-  const row: string[] = [];
-  for (const item of ast.body) {
-    if (item.type === "Comments") {
-      row.push(item.content);
-    }
-    if (item.type === "EnumOption") {
-      row.push(`${item.identify} int`);
-    }
-  }
-  return row.join("\n");
-};
-
-const generateEnumValue = (ast: EnumContentNode) => {
-  const row: string[] = [];
-  let value = 0;
-  for (const item of ast.body) {
-    if (item.type === "EnumOption") {
-      row.push(`${item.identify}: ${value++},`);
-    }
-  }
-  return row.join("\n");
-};
-
-// enum分为两步，一步定义结构体，一步定义Value
-export const generateEnum = (ast: EnumDeclarationNode) => {
-  const row = [];
-  const struct = `type S${ast.identify} struct {
-    ${generateEnumContent(ast.content)}
-  }`;
-  row.push(struct);
-
-  const value = `var ${ast.identify} = &S${ast.identify} {
-    ${generateEnumValue(ast.content)}
-  }`;
-  row.push(value);
-
-  formatMap.set(ast.identify, "int");
-
-  return row.join("\n");
-};
-
 // 因为某些IDL可能只有数据结构存在，它们的生成产物不需要引入gin框架的ctx
 // 所以这里使用注释的方式标注出Import内容的插入位置
 // 在需要插入Import内容时使用Replace方法将Import内容写进去
@@ -215,16 +147,10 @@ const GolangServerGenerator = (program: ProgramNode) => {
   content += STATIC_IMPORT_SLOT + "\n\n";
 
   for (const item of program.body) {
-    if (item.type === "StructDeclaration") {
-      content += generateStruct(item) + "\n";
-    }
     if (item.type === "ServiceDeclaration") {
       shouldAddImport = true;
       content += generateService(item) + "\n";
       content += generateDefinition(item) + "\n";
-    }
-    if (item.type === "EnumDeclaration") {
-      content += generateEnum(item) + "\n";
     }
     if (item.type === "Comments") {
       content += item.content + "\n";
@@ -237,6 +163,8 @@ const GolangServerGenerator = (program: ProgramNode) => {
 
   if (shouldAddImport) {
     content = content.replace(STATIC_IMPORT_SLOT, staticImport());
+  } else {
+    content = content.replace(STATIC_IMPORT_SLOT, "");
   }
 
   return parseFormatFlag(content);
