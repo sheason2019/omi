@@ -5,12 +5,11 @@ import {
   EnumContentNode,
   EnumDeclarationNode,
   ProgramNode,
+  ServiceDeclarationNode,
+  Method,
 } from "@omi-stack/omi-ast-parser";
 import { staticComment } from "../typescript/common";
 import formatMap from "./format-map";
-
-// 通过函数参数生成一个便于Gin框架的bindJSON绑定的Request数据类型
-const requestTypeStack = <string[]>[];
 
 const setFormatFlag = (format: string) => {
   return `%{format:${format}}%`;
@@ -105,6 +104,50 @@ export const generateEnum = (ast: EnumDeclarationNode) => {
   return row.join("\n");
 };
 
+const generateRequestTypeGroup = (service: ServiceDeclarationNode) => {
+  const row = [];
+  for (const item of service.content.body) {
+    if (item.type === "FunctionDeclaration") {
+      row.push(generateRequestType(item.arguments, item.identify, item.method));
+    }
+  }
+  return row.join("\n");
+};
+
+// Golang的public需要通过首字母大写来实现
+export const firstLetterUppercase = (str: string) => {
+  return str[0].toUpperCase() + str.substring(1);
+};
+
+const generateRequestType = (
+  args: FunctionArgumentsNode,
+  funcIdentify: string,
+  method: Method
+) => {
+  let variableCount = 0;
+  let bindMehod: string;
+  if (method === "Get" || method === "Delete") {
+    bindMehod = "form";
+  } else {
+    bindMehod = "json";
+  }
+  const row: string[] = [];
+  row.push(`type ${funcIdentify}Request struct {`);
+  for (const item of args.body) {
+    if (item.type === "VariableDeclaration") {
+      row.push(
+        `${firstLetterUppercase(item.identify)} ${
+          item.repeated ? "[]" : ""
+        }${setFormatFlag(item.format)} \`${bindMehod}:"${item.identify}"\``
+      );
+      variableCount++;
+    }
+  }
+  row.push("}");
+
+  return row.join("\n");
+};
+
 const GolangCommonGenerator = (program: ProgramNode) => {
   let content = staticComment + "\n";
 
@@ -120,10 +163,9 @@ const GolangCommonGenerator = (program: ProgramNode) => {
     if (item.type === "Comments") {
       content += item.content + "\n";
     }
-  }
-
-  while (requestTypeStack.length > 0) {
-    content += requestTypeStack.pop() + "\n";
+    if (item.type === "ServiceDeclaration") {
+      content += generateRequestTypeGroup(item) + "\n";
+    }
   }
 
   return parseFormatFlag(content);

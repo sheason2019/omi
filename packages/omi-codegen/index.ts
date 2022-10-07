@@ -10,6 +10,7 @@ import TSServerGenerator from "./lib/typescript/server";
 import CSServerGenerator from "./lib/csharp/server";
 import GolangServerGenerator from "./lib/golang/server";
 import GolangCommonGenerator from "./lib/golang/common";
+import GolangClientGenerator from "./lib/golang/client";
 
 export class OmiCodegen {
   // 为了避免在批量生成IDL遇到错误时仍旧生成没有错误的部分IDL，这里使用一个Map缓存语法树信息
@@ -158,33 +159,39 @@ export class OmiCodegen {
     });
   }
 
-  toGo(target: "server", targetDir: string) {
+  toGo(target: "server" | "client" | "both", targetDir: string) {
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir);
     }
 
     // 这里做一层缓存，确保Codegen一定是在IDL全部解析正确的情况下，才会生成到用户的硬盘里
-    const outputMap = new Map<string, string>();
+    const outputMap = new Map<string, string | null>();
 
     this.codegenMap.forEach((program, key) => {
       if (!program) {
         throw new Error("没有可用的语法树");
       }
-      const contents = {
-        common: "",
-        client: "",
-        server: "",
+      const contents: Record<string, string | null> = {
+        common: null,
+        client: null,
+        server: null,
       };
 
       contents.common = GolangCommonGenerator(program);
-      contents.server = GolangServerGenerator(program);
+      if (target !== "client") {
+        contents.server = GolangServerGenerator(program);
+      }
+      if (target !== "server") {
+        contents.client = GolangClientGenerator(program);
+      }
 
       outputMap.set(`${targetDir}/${key}-common.go`, contents.common);
       outputMap.set(`${targetDir}/${key}-server.go`, contents.server);
+      outputMap.set(`${targetDir}/${key}-client.go`, contents.client);
     });
 
     outputMap.forEach((content, key) => {
-      fs.writeFileSync(key, outputMap.get(key)!);
+      if (content !== null) fs.writeFileSync(key, outputMap.get(key)!);
     });
   }
 
