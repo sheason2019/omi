@@ -1,8 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from "axios";
 import { IOmiErrorConstructProps, OmiError } from "./typings";
 
-const methods = ["Get", "Post", "Put", "Delete", "Patch"] as const;
-type Method = typeof methods[number];
+type Method = "Get" | "Post" | "Put" | "Delete" | "Patch";
 
 type OmiOption = Omit<AxiosRequestConfig, "params">;
 

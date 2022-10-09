@@ -4,7 +4,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node index.ts",
-    "build": "tsc"
+    "build": "tsc --build tsconfig.cjs.json && tsc --build tsconfig.mjs.json"
   },
   "license": "MIT",
   "dependencies": {
