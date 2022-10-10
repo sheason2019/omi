@@ -7,15 +7,36 @@ import {
 } from "@omi-stack/omi-ast-parser";
 import TSClientGenerator from "./lib/typescript/client";
 import TSServerGenerator from "./lib/typescript/server";
-import CSServerGenerator from "./lib/csharp/server";
 import GolangServerGenerator from "./lib/golang/server";
 import GolangCommonGenerator from "./lib/golang/common";
 import GolangClientGenerator from "./lib/golang/client";
 import { parseFormatFlag } from "./lib/golang/format-map";
 
+interface CodegenMapItem {
+  // 文件的MD5码
+  md5: string;
+  // 文件的语法树内容
+  program: ProgramNode;
+  rootDir: string;
+}
+
+interface OutputItem {
+  content: string | null;
+  md5: string;
+}
+
 export class OmiCodegen {
   // 为了避免在批量生成IDL遇到错误时仍旧生成没有错误的部分IDL，这里使用一个Map缓存语法树信息
-  codegenMap = new Map<string, ProgramNode>();
+  codegenMap = new Map<string, CodegenMapItem>();
+
+  static getMd5ByPath(path: string): string {
+    // 获取IDL内容
+    const content = fs.readFileSync(path).toString();
+    // 创建内容的MD5摘要
+    const md5 = crypto.createHash("md5").update(content).digest("hex");
+
+    return md5;
+  }
 
   // 解析import info并返回需要导入的路径
   parseImportInfo(program: ProgramNode, rootDir: string): string[] {
@@ -119,12 +140,12 @@ export class OmiCodegen {
         }
         console.warn(
           "警告：IDL命名产生了冲突，Path为 " +
-          path +
-          " 的文件名已被自动命名为 " +
-          name
+            path +
+            " 的文件名已被自动命名为 " +
+            name
         );
       }
-      this.codegenMap.set(name, program);
+      this.codegenMap.set(name, { program, md5, rootDir });
     }
   }
 
@@ -136,7 +157,9 @@ export class OmiCodegen {
     // 这里做一层缓存，确保Codegen一定是在IDL全部解析正确的情况下，才会生成到用户的硬盘里
     const outputMap = new Map<string, string>();
 
-    this.codegenMap.forEach((program, key) => {
+    this.codegenMap.forEach((item, key) => {
+      const { program, md5 } = item;
+
       if (!program) {
         throw new Error("没有可用的语法树");
       }
@@ -166,9 +189,11 @@ export class OmiCodegen {
     }
 
     // 这里做一层缓存，确保Codegen一定是在IDL全部解析正确的情况下，才会生成到用户的硬盘里
-    const outputMap = new Map<string, string | null>();
+    const outputMap = new Map<string, OutputItem>();
 
-    this.codegenMap.forEach((program, key) => {
+    this.codegenMap.forEach((item, key) => {
+      const { program, md5, rootDir } = item;
+
       if (!program) {
         throw new Error("没有可用的语法树");
       }
@@ -178,47 +203,36 @@ export class OmiCodegen {
         server: null,
       };
 
-      contents.common = GolangCommonGenerator(program);
+      contents.common = GolangCommonGenerator(program, md5, rootDir);
       if (target !== "client") {
-        contents.server = GolangServerGenerator(program);
+        contents.server = GolangServerGenerator(program, md5, rootDir);
       }
       if (target !== "server") {
-        contents.client = GolangClientGenerator(program);
+        contents.client = GolangClientGenerator(program, md5, rootDir);
       }
 
-      outputMap.set(`${targetDir}/${key}-common.go`, contents.common);
-      outputMap.set(`${targetDir}/${key}-server.go`, contents.server);
-      outputMap.set(`${targetDir}/${key}-client.go`, contents.client);
+      const packContent = (content: string | null): OutputItem => ({
+        content,
+        md5,
+      });
+
+      outputMap.set(
+        `${targetDir}/${key}-common.go`,
+        packContent(contents.common)
+      );
+      outputMap.set(
+        `${targetDir}/${key}-server.go`,
+        packContent(contents.server)
+      );
+      outputMap.set(
+        `${targetDir}/${key}-client.go`,
+        packContent(contents.client)
+      );
     });
 
-    outputMap.forEach((content, key) => {
-      if (content !== null) fs.writeFileSync(key, parseFormatFlag(outputMap.get(key)!));
-    });
-  }
-
-  toCSharp(target: "server", targetDir: string) {
-    if (!fs.existsSync(targetDir)) {
-      fs.mkdirSync(targetDir);
-    }
-
-    // 这里做一层缓存，确保Codegen一定是在IDL全部解析正确的情况下，才会生成到用户的硬盘里
-    const outputMap = new Map<string, string>();
-
-    this.codegenMap.forEach((program, key) => {
-      if (!program) {
-        throw new Error("没有可用的语法树");
-      }
-      const contents = {
-        client: "",
-        server: "",
-      };
-
-      contents.server = CSServerGenerator(program);
-      outputMap.set(`${targetDir}/${key}-server.cs`, contents.server);
-    });
-
-    outputMap.forEach((content, key) => {
-      fs.writeFileSync(key, outputMap.get(key)!);
+    outputMap.forEach((item, key) => {
+      const { content, md5 } = item;
+      if (content !== null) fs.writeFileSync(key, parseFormatFlag(content));
     });
   }
 }

@@ -1,14 +1,29 @@
 import {
   FunctionArgumentsNode,
   FunctionDeclarationNode,
+  ImportDeclarationNode,
   ProgramNode,
   ServiceDeclarationNode,
 } from "@omi-stack/omi-ast-parser";
+import OmiCodegen from "../../index";
 import { staticComment } from "../typescript/common";
 import { firstLetterUppercase } from "./common";
 import { setFormatFlag } from "./format-map";
 
 const STATIC_IMPORT_SLOT = "[%STATIC_IMPORT SLOT%]";
+let md5: string;
+let importFormatMap: Map<string, string>;
+
+const handleSetFormatFlag = (format: string) => {
+  let inputMd5: string;
+  if (importFormatMap.has(format)) {
+    inputMd5 = importFormatMap.get(format)!;
+  } else {
+    inputMd5 = md5;
+  }
+
+  return setFormatFlag(format, inputMd5);
+};
 
 // 生成结构体定义
 const generateService = (service: ServiceDeclarationNode) => {
@@ -75,7 +90,7 @@ const generateMethod = (
 
   const returnStr = isVoid
     ? ""
-    : `(result ${setFormatFlag(node.returnType.format)})`;
+    : `(result ${handleSetFormatFlag(node.returnType.format)})`;
 
   const setResultStr = isVoid ? "" : ".SetResult(&result)";
 
@@ -141,7 +156,7 @@ const generateArgumentsType = (args: FunctionArgumentsNode) => {
   for (const item of args.body) {
     if (item.type === "VariableDeclaration") {
       format.push(
-        `${item.identify} ${item.repeated ? "[]" : ""}${setFormatFlag(
+        `${item.identify} ${item.repeated ? "[]" : ""}${handleSetFormatFlag(
           item.format
         )}`
       );
@@ -158,7 +173,23 @@ const staticImport = () => {
   )`;
 };
 
-const GolangClientGenerator = (program: ProgramNode) => {
+const handleImport = (node: ImportDeclarationNode, rootDir: string) => {
+  const fullPath = rootDir + node.path;
+  const md5 = OmiCodegen.getMd5ByPath(fullPath);
+
+  node.formats.forEach((format) => {
+    importFormatMap.set(format, md5);
+  });
+};
+
+const GolangClientGenerator = (
+  program: ProgramNode,
+  fileMd5: string,
+  rootDir: string
+) => {
+  md5 = fileMd5;
+  importFormatMap = new Map();
+
   let hasContent = false;
 
   let content = staticComment + "\n";
@@ -168,6 +199,9 @@ const GolangClientGenerator = (program: ProgramNode) => {
   content += STATIC_IMPORT_SLOT + "\n";
 
   for (const item of program.body) {
+    if (item.type === "ImportDeclaration") {
+      handleImport(item, rootDir);
+    }
     if (item.type === "ServiceDeclaration") {
       content += generateService(item) + "\n";
       content += generateNewFunction(item) + "\n";

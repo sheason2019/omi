@@ -4,13 +4,31 @@ import {
   FunctionDeclarationNode,
   ServiceDeclarationNode,
   ProgramNode,
+  ImportDeclarationNode,
 } from "@omi-stack/omi-ast-parser";
+import OmiCodegen from "../../index";
 import upperSnackMethodName from "../common/utils/upper-snack-method-name";
 import { staticComment } from "../typescript/common";
 import { setFormatFlag } from "./format-map";
 
+let md5: string;
+let importFormatMap: Map<string, string>;
+
+const handleSetFormatFlag = (format: string) => {
+  let inputMd5: string;
+  if (importFormatMap.has(format)) {
+    inputMd5 = importFormatMap.get(format)!;
+  } else {
+    inputMd5 = md5;
+  }
+
+  return setFormatFlag(format, inputMd5);
+};
+
 export const responseType = (format: FormatNode) => {
-  const val = `${format.repeated ? "[]" : ""}${setFormatFlag(format.format)}`;
+  const val = `${format.repeated ? "[]" : ""}${handleSetFormatFlag(
+    format.format
+  )}`;
   return val === "void" ? "" : val;
 };
 
@@ -19,7 +37,7 @@ export const generateArgumentsType = (args: FunctionArgumentsNode) => {
   for (const item of args.body) {
     if (item.type === "VariableDeclaration") {
       format.push(
-        `${item.identify} ${item.repeated ? "[]" : ""}${setFormatFlag(
+        `${item.identify} ${item.repeated ? "[]" : ""}${handleSetFormatFlag(
           item.format
         )}`
       );
@@ -88,7 +106,23 @@ const staticImport = () => {
   return row.join("\n");
 };
 
-const GolangServerGenerator = (program: ProgramNode) => {
+const handleImport = (node: ImportDeclarationNode, rootDir: string) => {
+  const fullPath = rootDir + node.path;
+  const md5 = OmiCodegen.getMd5ByPath(fullPath);
+
+  node.formats.forEach((format) => {
+    importFormatMap.set(format, md5);
+  });
+};
+
+const GolangServerGenerator = (
+  program: ProgramNode,
+  fileMd5: string,
+  rootDir: string
+) => {
+  md5 = fileMd5;
+  importFormatMap = new Map();
+
   let hasContent = false;
 
   let content = staticComment + "\n";
@@ -98,6 +132,9 @@ const GolangServerGenerator = (program: ProgramNode) => {
   content += STATIC_IMPORT_SLOT + "\n\n";
 
   for (const item of program.body) {
+    if (item.type === "ImportDeclaration") {
+      handleImport(item, rootDir);
+    }
     if (item.type === "ServiceDeclaration") {
       hasContent = true;
       content += generateService(item) + "\n";
