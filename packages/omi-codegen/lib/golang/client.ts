@@ -1,24 +1,14 @@
 import {
   FunctionArgumentsNode,
   FunctionDeclarationNode,
-  Method,
   ProgramNode,
   ServiceDeclarationNode,
 } from "@omi-stack/omi-ast-parser";
 import { staticComment } from "../typescript/common";
 import { firstLetterUppercase } from "./common";
-import formatMap from "./format-map";
+import { setFormatFlag } from "./format-map";
 
 const STATIC_IMPORT_SLOT = "[%STATIC_IMPORT SLOT%]";
-
-const setFormatFlag = (format: string) => {
-  return `%{format:${format}}%`;
-};
-const parseFormatFlag = (content: string) => {
-  return content.replaceAll(/%\{format:(\w+)\}%/g, (match, identify) => {
-    return formatMap.get(identify) ?? identify;
-  });
-};
 
 // 生成结构体定义
 const generateService = (service: ServiceDeclarationNode) => {
@@ -196,7 +186,7 @@ const GolangClientGenerator = (program: ProgramNode) => {
 
   content = content.replace(STATIC_IMPORT_SLOT, staticImport());
 
-  return parseFormatFlag(content);
+  return content;
 };
 
 export default GolangClientGenerator;

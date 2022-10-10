@@ -4,20 +4,10 @@ import {
   FunctionDeclarationNode,
   ServiceDeclarationNode,
   ProgramNode,
-  Method,
 } from "@omi-stack/omi-ast-parser";
 import upperSnackMethodName from "../common/utils/upper-snack-method-name";
 import { staticComment } from "../typescript/common";
-import formatMap from "./format-map";
-
-const setFormatFlag = (format: string) => {
-  return `%{format:${format}}%`;
-};
-const parseFormatFlag = (content: string) => {
-  return content.replaceAll(/%\{format:(\w+)\}%/g, (match, identify) => {
-    return formatMap.get(identify) ?? identify;
-  });
-};
+import { setFormatFlag } from "./format-map";
 
 export const responseType = (format: FormatNode) => {
   const val = `${format.repeated ? "[]" : ""}${setFormatFlag(format.format)}`;
@@ -124,6 +114,6 @@ const GolangServerGenerator = (program: ProgramNode) => {
 
   content = content.replace(STATIC_IMPORT_SLOT, staticImport());
 
-  return parseFormatFlag(content);
+  return content;
 };
 export default GolangServerGenerator;

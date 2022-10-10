@@ -9,16 +9,7 @@ import {
   Method,
 } from "@omi-stack/omi-ast-parser";
 import { staticComment } from "../typescript/common";
-import formatMap from "./format-map";
-
-const setFormatFlag = (format: string) => {
-  return `%{format:${format}}%`;
-};
-const parseFormatFlag = (content: string) => {
-  return content.replaceAll(/%\{format:(\w+)\}%/g, (match, identify) => {
-    return formatMap.get(identify) ?? identify;
-  });
-};
+import formatMap, { setFormatFlag } from "./format-map";
 
 const generateStruct = (ast: StructDeclarationNode) => {
   const row = [];
@@ -136,8 +127,7 @@ const generateRequestType = (
   for (const item of args.body) {
     if (item.type === "VariableDeclaration") {
       row.push(
-        `${firstLetterUppercase(item.identify)} ${
-          item.repeated ? "[]" : ""
+        `${firstLetterUppercase(item.identify)} ${item.repeated ? "[]" : ""
         }${setFormatFlag(item.format)} \`${bindMehod}:"${item.identify}"\``
       );
       variableCount++;
@@ -168,6 +158,6 @@ const GolangCommonGenerator = (program: ProgramNode) => {
     }
   }
 
-  return parseFormatFlag(content);
+  return content;
 };
 export default GolangCommonGenerator;

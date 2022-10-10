@@ -1,10 +1,6 @@
-import { Todo } from "./todo.omi";
+import { Todo, TodoType } from "./todo.omi";
 
 service Import {
   Todo GetTodo(int id);
-}
-
-enum TodoType {
-  // User
-  Normal,
+  TodoType GetTodoType();
 }

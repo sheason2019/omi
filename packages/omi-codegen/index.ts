@@ -11,6 +11,7 @@ import CSServerGenerator from "./lib/csharp/server";
 import GolangServerGenerator from "./lib/golang/server";
 import GolangCommonGenerator from "./lib/golang/common";
 import GolangClientGenerator from "./lib/golang/client";
+import { parseFormatFlag } from "./lib/golang/format-map";
 
 export class OmiCodegen {
   // 为了避免在批量生成IDL遇到错误时仍旧生成没有错误的部分IDL，这里使用一个Map缓存语法树信息
@@ -118,9 +119,9 @@ export class OmiCodegen {
         }
         console.warn(
           "警告：IDL命名产生了冲突，Path为 " +
-            path +
-            " 的文件名已被自动命名为 " +
-            name
+          path +
+          " 的文件名已被自动命名为 " +
+          name
         );
       }
       this.codegenMap.set(name, program);
@@ -191,7 +192,7 @@ export class OmiCodegen {
     });
 
     outputMap.forEach((content, key) => {
-      if (content !== null) fs.writeFileSync(key, outputMap.get(key)!);
+      if (content !== null) fs.writeFileSync(key, parseFormatFlag(outputMap.get(key)!));
     });
   }
 
