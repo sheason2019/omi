@@ -11,24 +11,19 @@ import {
 } from "@omi-stack/omi-ast-parser";
 import OmiCodegen from "../../index";
 import { staticComment } from "../typescript/common";
-import { getGoFormatMap, setFormatFlag } from "./format-map";
+import {
+  getGoFormatMap,
+  handleSetFormatFlag,
+  setFormatFlag,
+} from "./format-map";
+import { setImportFlag, updateImportFlag } from "./import";
+import { setPackageFlag } from "./package";
 
 let formatMap: Map<string, string>;
 let md5: string;
 
-// Map<FormatTypeIdentify, MD5>
 let importFormatMap: Map<string, string>;
-
-const handleSetFormatFlag = (format: string) => {
-  let inputMd5: string;
-  if (importFormatMap.has(format)) {
-    inputMd5 = importFormatMap.get(format)!;
-  } else {
-    inputMd5 = md5;
-  }
-
-  return setFormatFlag(format, inputMd5);
-};
+let importUsedMap: Map<string, boolean>;
 
 const generateStruct = (ast: StructDeclarationNode) => {
   const row = [];
@@ -37,7 +32,10 @@ const generateStruct = (ast: StructDeclarationNode) => {
     if (item.type === "VariableDeclaration") {
       row.push(
         `${item.identify} *${item.repeated ? "[]" : ""}${handleSetFormatFlag(
-          item.format
+          item.format,
+          md5,
+          importFormatMap,
+          importUsedMap
         )}`
       );
     }
@@ -55,7 +53,10 @@ const generateStruct = (ast: StructDeclarationNode) => {
 
 export const responseType = (format: FormatNode) => {
   const val = `${format.repeated ? "[]" : ""}${handleSetFormatFlag(
-    format.format
+    format.format,
+    md5,
+    importFormatMap,
+    importUsedMap
   )}`;
   return val === "void" ? "" : val;
 };
@@ -66,7 +67,10 @@ export const generateArgumentsType = (args: FunctionArgumentsNode) => {
     if (item.type === "VariableDeclaration") {
       format.push(
         `${item.identify} ${item.repeated ? "[]" : ""}${handleSetFormatFlag(
-          item.format
+          item.format,
+          md5,
+          importFormatMap,
+          importUsedMap
         )}`
       );
     }
@@ -150,9 +154,12 @@ const generateRequestType = (
       row.push(
         `${firstLetterUppercase(item.identify)} ${
           item.repeated ? "[]" : ""
-        }${handleSetFormatFlag(item.format)} \`${bindMehod}:"${
-          item.identify
-        }"\``
+        }${handleSetFormatFlag(
+          item.format,
+          md5,
+          importFormatMap,
+          importUsedMap
+        )} \`${bindMehod}:"${item.identify}"\``
       );
       variableCount++;
     }
@@ -162,31 +169,39 @@ const generateRequestType = (
   return row.join("\n");
 };
 
-const handleImport = (node: ImportDeclarationNode, rootDir: string) => {
+export const handleImport = (
+  node: ImportDeclarationNode,
+  rootDir: string,
+  map: Map<string, string>
+) => {
   const fullPath = rootDir + node.path;
   const md5 = OmiCodegen.getMd5ByPath(fullPath);
 
   node.formats.forEach((format) => {
-    importFormatMap.set(format, md5);
+    map.set(format, md5);
   });
+
+  return setImportFlag(md5);
 };
 
 const GolangCommonGenerator = (
   program: ProgramNode,
   fileMd5: string,
-  rootDir: string
+  rootDir: string,
+  packageName: string
 ) => {
-  formatMap = getGoFormatMap(fileMd5);
+  formatMap = getGoFormatMap(fileMd5, packageName);
   md5 = fileMd5;
   importFormatMap = new Map();
+  importUsedMap = new Map();
 
   let content = staticComment + "\n";
 
-  content += `package omi\n`;
+  content += setPackageFlag() + "\n";
 
   for (const item of program.body) {
     if (item.type === "ImportDeclaration") {
-      handleImport(item, rootDir);
+      content += handleImport(item, rootDir, importFormatMap);
     }
     if (item.type === "StructDeclaration") {
       content += generateStruct(item) + "\n";
@@ -201,6 +216,8 @@ const GolangCommonGenerator = (
       content += generateRequestTypeGroup(item) + "\n";
     }
   }
+
+  content = updateImportFlag(content, importUsedMap);
 
   return content;
 };

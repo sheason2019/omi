@@ -4,30 +4,24 @@ import {
   FunctionDeclarationNode,
   ServiceDeclarationNode,
   ProgramNode,
-  ImportDeclarationNode,
 } from "@omi-stack/omi-ast-parser";
-import OmiCodegen from "../../index";
 import upperSnackMethodName from "../common/utils/upper-snack-method-name";
 import { staticComment } from "../typescript/common";
-import { setFormatFlag } from "./format-map";
+import { handleImport } from "./common";
+import { handleSetFormatFlag } from "./format-map";
+import { updateImportFlag } from "./import";
+import { setPackageFlag } from "./package";
 
 let md5: string;
 let importFormatMap: Map<string, string>;
-
-const handleSetFormatFlag = (format: string) => {
-  let inputMd5: string;
-  if (importFormatMap.has(format)) {
-    inputMd5 = importFormatMap.get(format)!;
-  } else {
-    inputMd5 = md5;
-  }
-
-  return setFormatFlag(format, inputMd5);
-};
+let importUsedMap: Map<string, boolean>;
 
 export const responseType = (format: FormatNode) => {
   const val = `${format.repeated ? "[]" : ""}${handleSetFormatFlag(
-    format.format
+    format.format,
+    md5,
+    importFormatMap,
+    importUsedMap
   )}`;
   return val === "void" ? "" : val;
 };
@@ -38,7 +32,10 @@ export const generateArgumentsType = (args: FunctionArgumentsNode) => {
     if (item.type === "VariableDeclaration") {
       format.push(
         `${item.identify} ${item.repeated ? "[]" : ""}${handleSetFormatFlag(
-          item.format
+          item.format,
+          md5,
+          importFormatMap,
+          importUsedMap
         )}`
       );
     }
@@ -106,15 +103,6 @@ const staticImport = () => {
   return row.join("\n");
 };
 
-const handleImport = (node: ImportDeclarationNode, rootDir: string) => {
-  const fullPath = rootDir + node.path;
-  const md5 = OmiCodegen.getMd5ByPath(fullPath);
-
-  node.formats.forEach((format) => {
-    importFormatMap.set(format, md5);
-  });
-};
-
 const GolangServerGenerator = (
   program: ProgramNode,
   fileMd5: string,
@@ -122,18 +110,19 @@ const GolangServerGenerator = (
 ) => {
   md5 = fileMd5;
   importFormatMap = new Map();
+  importUsedMap = new Map();
 
   let hasContent = false;
 
   let content = staticComment + "\n";
 
-  content += `package omi\n`;
+  content += setPackageFlag() + "\n";
 
   content += STATIC_IMPORT_SLOT + "\n\n";
 
   for (const item of program.body) {
     if (item.type === "ImportDeclaration") {
-      handleImport(item, rootDir);
+      content += handleImport(item, rootDir, importFormatMap);
     }
     if (item.type === "ServiceDeclaration") {
       hasContent = true;
@@ -150,6 +139,8 @@ const GolangServerGenerator = (
   }
 
   content = content.replace(STATIC_IMPORT_SLOT, staticImport());
+
+  content = updateImportFlag(content, importUsedMap);
 
   return content;
 };

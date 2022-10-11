@@ -11,6 +11,7 @@ import GolangServerGenerator from "./lib/golang/server";
 import GolangCommonGenerator from "./lib/golang/common";
 import GolangClientGenerator from "./lib/golang/client";
 import { parseFormatFlag } from "./lib/golang/format-map";
+import suffixDeal from "./lib/golang/suffix-deal";
 
 interface CodegenMapItem {
   // 文件的MD5码
@@ -23,6 +24,7 @@ interface CodegenMapItem {
 interface OutputItem {
   content: string | null;
   md5: string;
+  packageName: string;
 }
 
 export class OmiCodegen {
@@ -184,6 +186,8 @@ export class OmiCodegen {
   }
 
   toGo(target: "server" | "client" | "both", targetDir: string) {
+    const packageRoot = "github.com/sheason2019/linkme/rpc";
+
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir);
     }
@@ -203,7 +207,7 @@ export class OmiCodegen {
         server: null,
       };
 
-      contents.common = GolangCommonGenerator(program, md5, rootDir);
+      contents.common = GolangCommonGenerator(program, md5, rootDir, key);
       if (target !== "client") {
         contents.server = GolangServerGenerator(program, md5, rootDir);
       }
@@ -214,25 +218,35 @@ export class OmiCodegen {
       const packContent = (content: string | null): OutputItem => ({
         content,
         md5,
+        packageName: key,
       });
 
+      const pathPrefix = `${targetDir}/${key}`;
+      try {
+        fs.mkdirSync(pathPrefix);
+      } catch (_) {}
       outputMap.set(
-        `${targetDir}/${key}-common.go`,
+        `${pathPrefix}/${key}-common.go`,
         packContent(contents.common)
       );
       outputMap.set(
-        `${targetDir}/${key}-server.go`,
+        `${pathPrefix}/${key}-server.go`,
         packContent(contents.server)
       );
       outputMap.set(
-        `${targetDir}/${key}-client.go`,
+        `${pathPrefix}/${key}-client.go`,
         packContent(contents.client)
       );
     });
 
     outputMap.forEach((item, key) => {
-      const { content, md5 } = item;
-      if (content !== null) fs.writeFileSync(key, parseFormatFlag(content));
+      const { content, packageName, md5 } = item;
+      if (content !== null) {
+        fs.writeFileSync(
+          key,
+          suffixDeal(content, packageName, md5, packageRoot)
+        );
+      }
     });
   }
 }

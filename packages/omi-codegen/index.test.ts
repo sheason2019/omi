@@ -4,4 +4,4 @@ const codegen = new OmiCodegen();
 
 codegen.parse("./test-idl/");
 
-codegen.toGo("server", "test-dist");
+codegen.toGo("server", "test-dist/rpc");
