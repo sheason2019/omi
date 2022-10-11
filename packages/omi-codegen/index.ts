@@ -185,9 +185,11 @@ export class OmiCodegen {
     });
   }
 
-  toGo(target: "server" | "client" | "both", targetDir: string) {
-    const packageRoot = "github.com/sheason2019/linkme/rpc";
-
+  toGo(
+    target: "server" | "client" | "both",
+    targetDir: string,
+    packageRoot: string
+  ) {
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir);
     }

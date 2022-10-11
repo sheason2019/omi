@@ -15,6 +15,10 @@ program
     "-l, -language <language>",
     `use "omi-codegen -allowLang" check all language support`
   )
+  .option(
+    "-packageRoot, <packageRoot>",
+    "Golang special property, use for declare codegen product package position."
+  )
   .option("-allowLang", "check allow language");
 
 const action = () => {
@@ -56,7 +60,11 @@ const action = () => {
   if (lang === "typescript" || lang === "ts") {
     codegen.toTypescript(target, outDir);
   } else if (lang === "go") {
-    codegen.toGo(target, outDir);
+    const packageRoot: string = options.PackageRoot;
+    if (!packageRoot) {
+      throw new Error("未声明packageRoot属性");
+    }
+    codegen.toGo(target, outDir, packageRoot);
   } else if (allowLang.indexOf(lang) === -1) {
     console.error(`当前允许的语言类型仅有：${allowLang}`);
     return;
