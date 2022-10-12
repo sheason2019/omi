@@ -80,7 +80,7 @@ const generateMethod = (
 
   const returnStr = isVoid
     ? ""
-    : `(result ${handleSetFormatFlag(
+    : `(result ${node.returnType.repeated ? "[]" : ""}${handleSetFormatFlag(
         node.returnType.format,
         md5,
         importFormatMap,
