@@ -40,7 +40,7 @@ const generateService = (service: ServiceDeclarationNode) => {
   return row.join("\n");
 };
 
-const ClientGenerator = (program: ProgramNode): string => {
+const ClientGenerator = (program: ProgramNode, commonjs: boolean): string => {
   let hasService = false;
 
   const row: string[] = [];
@@ -70,20 +70,23 @@ const ClientGenerator = (program: ProgramNode): string => {
 
   let content = row.join("\n");
 
+  const requirePath =
+    "@omi-stack/omi-client" + (commonjs ? "/dist/commonjs" : "");
+
   if (hasService) {
     const row: string[] = [];
-    row.push(`import { OmiClientBase } from '@omi-stack/omi-client';`);
+    row.push(`import { OmiClientBase } from '${requirePath}';`);
     row.push(`import { AxiosRequestConfig } from "axios";`);
-    const netImport = row.join('\n');
+    const netImport = row.join("\n");
     content = content.replace(NET_WORK_FLAG, netImport);
   } else {
-    content = content.replace(NET_WORK_FLAG, '');
+    content = content.replace(NET_WORK_FLAG, "");
   }
 
   return prettier.format(content, { parser: "typescript" });
 };
 
 // 根据IDL文件是否生成Service接口确定是否需要引入axios
-const NET_WORK_FLAG = "<%NET_WORK_FLAG%>"
+const NET_WORK_FLAG = "<%NET_WORK_FLAG%>";
 
 export default ClientGenerator;

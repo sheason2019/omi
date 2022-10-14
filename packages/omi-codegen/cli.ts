@@ -19,6 +19,7 @@ program
     "-packageRoot, <packageRoot>",
     "Golang special property, use for declare codegen product package position."
   )
+  .option("-commonjs", "use commonjs for @omi-stack/omi-client-js")
   .option("-allowLang", "check allow language");
 
 const action = () => {
@@ -41,6 +42,7 @@ const action = () => {
   const lang = options.Language;
   const target = options.CodegenTarget;
   const fileOrPath = program.args.length ? program.args[0] : undefined;
+  const commonjs = options.Commonjs ?? false;
 
   // 如果没有输入路径参数，展示帮助信息并退出CLI
   if (!fileOrPath) {
@@ -58,7 +60,10 @@ const action = () => {
     return;
   }
   if (lang === "typescript" || lang === "ts") {
-    codegen.toTypescript(target, outDir);
+    if (typeof commonjs !== "boolean") {
+      throw new Error("-commonjs 参数的值必须为Boolean类型");
+    }
+    codegen.toTypescript(target, outDir, commonjs);
   } else if (lang === "go") {
     const packageRoot: string = options.PackageRoot;
     if (!packageRoot) {

@@ -151,7 +151,11 @@ export class OmiCodegen {
     }
   }
 
-  toTypescript(target: "client" | "server" | "both", targetDir: string) {
+  toTypescript(
+    target: "client" | "server" | "both",
+    targetDir: string,
+    commonjs: boolean
+  ) {
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir);
     }
@@ -175,7 +179,7 @@ export class OmiCodegen {
         outputMap.set(`${targetDir}/${key}-server.ts`, contents.server);
       }
       if (target !== "server") {
-        contents.client = TSClientGenerator(program);
+        contents.client = TSClientGenerator(program, commonjs);
         outputMap.set(`${targetDir}/${key}-client.ts`, contents.client);
       }
     });
