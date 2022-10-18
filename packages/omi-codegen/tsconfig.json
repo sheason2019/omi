@@ -11,5 +11,5 @@
     "skipLibCheck": true,
     "moduleResolution": "node"
   },
-  "exclude": ["./**/*.test.ts", "./dist/**/*.ts"]
+  "exclude": ["./**/*.test.ts", "./dist/**/*.ts", "./test-dist/**/*.ts"]
 }

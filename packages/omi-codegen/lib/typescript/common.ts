@@ -48,9 +48,9 @@ export const generateStruct = (ast: StructDeclarationNode): string => {
   for (const item of ast.content.body) {
     if (item.type === "VariableDeclaration") {
       row.push(
-        `  ${item.identify}: ${formatMap.get(item.format) ?? item.format}${
-          item.repeated ? "[]" : ""
-        } ${item.optional ? " | undefined" : ""};`
+        `  ${item.identify}${item.optional ? "?" : ""}: ${
+          formatMap.get(item.format) ?? item.format
+        }${item.repeated ? "[]" : ""};`
       );
     }
     if (item.type === "Comments") {
