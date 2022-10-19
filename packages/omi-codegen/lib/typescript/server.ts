@@ -3,7 +3,6 @@ import {
   ServiceDeclarationNode,
   ProgramNode,
   FunctionArgumentsNode,
-  Method,
 } from "@omi-stack/omi-ast-parser";
 import prettier from "prettier";
 import upperSnackMethodName from "../common/utils/upper-snack-method-name";
@@ -16,25 +15,23 @@ import {
 } from "./common";
 import formatMap from "./format-map";
 
-export const generateArgumentsType = (args: FunctionArgumentsNode) => {
-  const formats: string[] = [];
+export const generateArgumentsType = (func: FunctionDeclarationNode) => {
+  let hasRequestBody = false;
 
+  const args = func.arguments;
   for (const item of args.body) {
     if (item.type === "VariableDeclaration") {
-      formats.push(
-        `${item.identify}: ${formatMap.get(item.format) ?? item.format}${
-          item.repeated ? "[]" : ""
-        }${item.optional ? "?" : ""}`
-      );
+      hasRequestBody = true;
+      break;
     }
   }
 
-  return formats.join(",");
+  return hasRequestBody ? `payload: ${func.identify}Request` : "";
 };
 
 const generateFunction = (func: FunctionDeclarationNode) => {
   const resp = responseType(func.returnType);
-  const args = generateArgumentsType(func.arguments);
+  const args = generateArgumentsType(func);
   return `${func.identify}(${args}): Promise<${resp}> | ${resp};`;
 };
 

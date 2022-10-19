@@ -14,6 +14,7 @@ const STATIC_IMPORT_SLOT = "[%STATIC_IMPORT SLOT%]";
 let md5: string;
 let importFormatMap: Map<string, string>;
 let importUsedMap: Map<string, boolean>;
+let useFmt: boolean;
 
 // 生成结构体定义
 const generateService = (service: ServiceDeclarationNode) => {
@@ -127,6 +128,7 @@ const generateRequestParams = (
   for (const item of args.body) {
     if (item.type === "VariableDeclaration") {
       if (func.method === "Get" || func.method === "Delete") {
+        useFmt = true;
         content += `.SetQueryParam("${item.identify}", fmt.Sprint(${item.identify}))`;
       } else {
         const args: string[] = [];
@@ -165,7 +167,7 @@ const generateArgumentsType = (args: FunctionArgumentsNode) => {
 
 const staticImport = () => {
   return `import (
-    "fmt"
+    ${useFmt ? "fmt" : ""}
 
     "github.com/imroc/req/v3"
   )`;
@@ -179,6 +181,7 @@ const GolangClientGenerator = (
   md5 = fileMd5;
   importFormatMap = new Map();
   importUsedMap = new Map();
+  useFmt = false;
 
   let hasContent = false;
 
