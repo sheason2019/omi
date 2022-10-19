@@ -83,7 +83,7 @@ const generateRequestType = (
 ) => {
   let variableCount = 0;
   const row: string[] = [];
-  row.push(`interface ${funcIdentify}Request {`);
+  row.push(`export interface ${funcIdentify}Request {`);
   for (const item of args.body) {
     if (item.type === "VariableDeclaration") {
       row.push(
