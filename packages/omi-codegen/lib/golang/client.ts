@@ -167,7 +167,7 @@ const generateArgumentsType = (args: FunctionArgumentsNode) => {
 
 const staticImport = () => {
   return `import (
-    ${useFmt ? "fmt" : ""}
+    ${useFmt ? '"fmt"' : ""}
 
     "github.com/imroc/req/v3"
   )`;
