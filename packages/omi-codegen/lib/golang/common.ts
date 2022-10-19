@@ -166,6 +166,10 @@ const generateRequestType = (
   }
   row.push("}");
 
+  if (variableCount === 0) {
+    return "";
+  }
+
   return row.join("\n");
 };
 

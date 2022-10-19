@@ -3,6 +3,7 @@ import {
   ServiceDeclarationNode,
   ProgramNode,
   FunctionArgumentsNode,
+  Method,
 } from "@omi-stack/omi-ast-parser";
 import prettier from "prettier";
 import upperSnackMethodName from "../common/utils/upper-snack-method-name";
@@ -66,6 +67,42 @@ const generateDefinition = (ast: ServiceDeclarationNode): string => {
   return row.join("\n");
 };
 
+const generateRequestTypeGroup = (service: ServiceDeclarationNode) => {
+  const row = [];
+  for (const item of service.content.body) {
+    if (item.type === "FunctionDeclaration") {
+      row.push(generateRequestType(item.arguments, item.identify));
+    }
+  }
+  return row.join("\n");
+};
+
+const generateRequestType = (
+  args: FunctionArgumentsNode,
+  funcIdentify: string
+) => {
+  let variableCount = 0;
+  const row: string[] = [];
+  row.push(`interface ${funcIdentify}Request {`);
+  for (const item of args.body) {
+    if (item.type === "VariableDeclaration") {
+      row.push(
+        `  ${item.identify}${item.optional ? "?" : ""}: ${
+          formatMap.get(item.format) ?? item.format
+        }${item.repeated ? "[]" : ""};`
+      );
+      variableCount++;
+    }
+  }
+  row.push("}");
+
+  if (variableCount === 0) {
+    return "";
+  }
+
+  return row.join("\n");
+};
+
 const ServerGenerator = (program: ProgramNode): string => {
   let content = ``;
   content += staticComment;
@@ -80,6 +117,8 @@ const ServerGenerator = (program: ProgramNode): string => {
     if (item.type === "ServiceDeclaration") {
       content += generateService(item) + "\n";
       content += generateDefinition(item) + "\n";
+
+      content += generateRequestTypeGroup(item) + "\n";
     }
     if (item.type === "EnumDeclaration") {
       content += generateEnum(item) + "\n";
