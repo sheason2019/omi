@@ -31,6 +31,8 @@ service Todo {
 
 ## 生成服务端文件
 
+### Typescript
+
 在创建完`todo.omi`文件后，在目录下执行以下命令以生成服务端文件：
 
 ```
@@ -42,32 +44,152 @@ codegen 生成的内容应该如下所示：
 ```ts
 /**
  * 本文件由Omi.js自动生成，谨慎改动！
- * 生成时间：2022年8月23日 17:43:36.
+ * 生成时间：2022年10月19日 15:46:25.
  */
 export interface Todo {
   id: number;
   content: string;
   finish: boolean;
   createTime: number;
+  todoType?: TodoType;
 }
 // block
-export interface UnimpledTodoController {
+export interface UnimpledITodoController {
   GetTodoList(): Promise<Todo[]> | Todo[];
-  PostTodo(content: string): Promise<void> | void;
-  PutTodo(todo: Todo): Promise<void> | void;
-  DeleteTodo(id: number): Promise<void> | void;
+  PostTodo(payload: PostTodoRequest): Promise<void> | void;
+  PutTodo(payload: PutTodoRequest): Promise<void> | void;
+  DeleteTodo(payload: DeleteTodoRequest): Promise<void> | void;
+  Login(): Promise<void> | void;
 }
-export const TodoControllerDefinition = {
-  GET_TODO_LIST_PATH: "Todo.TodoList",
-  POST_TODO_PATH: "Todo.Todo",
-  PUT_TODO_PATH: "Todo.Todo",
-  DELETE_TODO_PATH: "Todo.Todo",
+export const ITodoControllerDefinition = {
+  GET_TODO_LIST_PATH: "ITodo.TodoList",
+  POST_TODO_PATH: "ITodo.Todo",
+  PUT_TODO_PATH: "ITodo.Todo",
+  DELETE_TODO_PATH: "ITodo.Todo",
+  LOGIN_PATH: "ITodo.Login",
 } as const;
+
+export interface PostTodoRequest {
+  content: string;
+  id: number;
+}
+export interface PutTodoRequest {
+  todo: Todo;
+}
+export interface DeleteTodoRequest {
+  id: number;
+}
+
+export enum TodoType {
+  Normal,
+  Topping,
+}
 ```
 
-该接口如何使用可以移步示例代码：[Omi-example-server-node](https://github.com/sheason2019/omi-example/tree/master/packages/omi-example-server-node)。
+下面的数个`*Request`接口是为了适配 Nest.js 的`@Body()`方法注入参数而自动生成的请求体，在特定情况下它会跟用户手动指定的`*Request`结构体冲突，这可能是未来需要想办法解决的一个问题。
+
+### Go
+
+Go 语言的使用方法类似，需要注意的是，Go 需要额外指定一个参数`-packageRoot`：
+
+```
+omi-codegen -packageRoot github.com/sheason2019/linkme/rpc -o ./rpc -l go -t server todo.omi
+```
+
+这是因为 Golang 不支持相对路径导入 Package，只能使用 URL 来标识导入的包，这里就需要手动声明代码生成根目录的路径。
+
+最终生成的代码内容如下所示：
+
+```go
+// .rpc/todo/todo-common.go
+/**
+* 本文件由Omi.js自动生成，谨慎改动！
+* 生成时间：2022年10月19日 15:46:25.
+ */
+package todo
+
+type Todo struct {
+	id         *int
+	content    *string
+	finish     *bool
+	createTime *int
+	todoType   *int
+}
+
+// block
+
+type PostTodoRequest struct {
+	Content string `json:"content"`
+	Id      int    `json:"id"`
+}
+type PutTodoRequest struct {
+	Todo Todo `json:"todo"`
+}
+type DeleteTodoRequest struct {
+	Id int `form:"id"`
+}
+
+type STodoType struct {
+	Normal  int
+	Topping int
+}
+
+var TodoType = &STodoType{
+	Normal:  0,
+	Topping: 1,
+}
+```
+
+这一部分是服务端和客户端的共用代码，它将结构体和 Enum 类型的数据单独放置在一个文件里进行实现。
+
+由于一开始 omi 的目标是 C#和 Typescrpit，因此就在 omi 的 AST Parser 中添加了对 Enum 的支持，但没想到 Go 不支持 Enum，就导致在 Go 的 Codegen 中只能曲线实现 Enum。
+
+下面看看服务端生成的代码：
+
+```go
+// ./rpc/todo/todo-server.go
+/**
+* 本文件由Omi.js自动生成，谨慎改动！
+* 生成时间：2022年10月19日 15:46:25.
+ */
+package todo
+
+import (
+	"github.com/gin-gonic/gin"
+)
+
+// block
+type ITodo interface {
+	GetTodoList(ctx *gin.Context) []Todo
+	PostTodo(ctx *gin.Context, content string, id int)
+	PutTodo(ctx *gin.Context, todo Todo)
+	DeleteTodo(ctx *gin.Context, id int)
+	Login(ctx *gin.Context)
+}
+type TypeITodoDefinition struct {
+	GET_TODO_LIST_PATH string
+	POST_TODO_PATH     string
+	PUT_TODO_PATH      string
+	DELETE_TODO_PATH   string
+	LOGIN_PATH         string
+}
+
+var ITodoDefinition = &TypeITodoDefinition{
+	GET_TODO_LIST_PATH: "/ITodo.TodoList",
+	POST_TODO_PATH:     "/ITodo.Todo",
+	PUT_TODO_PATH:      "/ITodo.Todo",
+	DELETE_TODO_PATH:   "/ITodo.Todo",
+	LOGIN_PATH:         "/ITodo.Login",
+}
+```
+
+它提供了对应的接口、返回类型和接口 Url，可惜的是 Go 无法像 Java 和 C#那样通过框架和注解实现 Controller 层的路由声明，这就导致我们后续还需要手动去编写部分的模板代码去将 API 暴露出来。
+
+同时，在生成产物中可以注意到 interface 中的方法的第一个参数都是`*gin.Context`，这是因为在实践的过程中发现应用经常会需要去获取一些放置在请求头中的数据，如果不将 Context 传递到 Controller 中，就很难去实现这个功能，因此，这里就在所有的 interface 方法中默认添加了一个`*gin.Context`参数。
 
 ## 生成客户端文件
+
+### Typescript
 
 在创建完`todo.omi`文件后，在目录下执行以下命令以生成客户端文件：
 
@@ -125,7 +247,113 @@ export class TodoClient extends OmiClientBase {
 
 客户端生成的文件是一套经过封装的请求接口，它有一个依赖`@omi-stack/omi-client`，这个包的源码在该项目下的`omi-client-js`文件夹中，主要功能就是把 Axios 封装了一下，让 Codegen 只需要生成一些基本的信息就可以实现对指定网络接口的调用，并对调用结果提供基本的类型提示。
 
-具体的使用方法可以参考示例代码的源码：[Omi-example-web](https://github.com/sheason2019/omi-example/tree/master/packages/omi-example-web)
+但 Typescript 的 Codegen 中很不好的一点是我把请求所有的参数都限制在了第一个参数`props`中，这是因为我最初编写代码的时候觉得用户在发起请求的时候可能会很细粒度的去调整每个请求中的 option 信息，但后来自己写了点应用发现好像不是这个样子，想修改请求头的时候重新 new 一个 TodoClient 对象并注入不一样的 AxiosInstance 就好了，所以将来这里的参数声明方式应该会修改一下，改的更像 IDL 中的风格一点。
+
+### Go
+
+跟服务端的 Go 类似，在使用 CLI 生成客户端代码的时候，Go 依然需要比 Typescript 多输入一个`-packageRoot`参数：
+
+```
+omi-codegen -packageRoot github.com/sheason2019/linkme/rpc -o ./rpc -l go -t client todo.omi
+```
+
+Go 的客户端生成产物跟 Typescript 的比较类似，但调用的方式稍微友善一点，未来有空的话也会把 Typescript 的请求调用方式改成 Go 这种的。
+
+生成的产物大概长下面这样：
+
+```go
+/**
+* 本文件由Omi.js自动生成，谨慎改动！
+* 生成时间：2022年10月19日 15:46:25.
+ */
+package todo
+
+import (
+	"fmt"
+
+	"github.com/imroc/req/v3"
+)
+
+// block
+type ITodoClient struct {
+	Request *req.Client
+	HOST    string
+}
+
+func (ITodoClient) New(host string) (definition ITodoClient) {
+	definition.HOST = host
+	return
+}
+func (definition ITodoClient) GetRequestClient() *req.Client {
+	if definition.Request != nil {
+		return definition.Request
+	}
+	return req.C()
+}
+func (definition ITodoClient) GetTodoList() (result []Todo) {
+	client := definition.GetRequestClient()
+	resp, err := client.R().SetResult(&result).Get(definition.HOST + "/ITodo.TodoList")
+	if err != nil {
+		panic(err)
+	}
+	if resp.IsError() {
+		panic("远程调用错误")
+	}
+	return
+}
+
+func (definition ITodoClient) PostTodo(content string, id int) {
+	client := definition.GetRequestClient()
+	resp, err := client.R().SetBody(&PostTodoRequest{Content: content, Id: id}).SetBody(&PostTodoRequest{Content: content, Id: id}).Post(definition.HOST + "/ITodo.Todo")
+	if err != nil {
+		panic(err)
+	}
+	if resp.IsError() {
+		panic("远程调用错误")
+	}
+	return
+}
+
+func (definition ITodoClient) PutTodo(todo Todo) {
+	client := definition.GetRequestClient()
+	resp, err := client.R().SetBody(&PutTodoRequest{Todo: todo}).Put(definition.HOST + "/ITodo.Todo")
+	if err != nil {
+		panic(err)
+	}
+	if resp.IsError() {
+		panic("远程调用错误")
+	}
+	return
+}
+
+func (definition ITodoClient) DeleteTodo(id int) {
+	client := definition.GetRequestClient()
+	resp, err := client.R().SetQueryParam("id", fmt.Sprint(id)).Delete(definition.HOST + "/ITodo.Todo")
+	if err != nil {
+		panic(err)
+	}
+	if resp.IsError() {
+		panic("远程调用错误")
+	}
+	return
+}
+
+func (definition ITodoClient) Login() {
+	client := definition.GetRequestClient()
+	resp, err := client.R().Post(definition.HOST + "/ITodo.Login")
+	if err != nil {
+		panic(err)
+	}
+	if resp.IsError() {
+		panic("远程调用错误")
+	}
+	return
+}
+```
+
+可以看到 Go 客户端的产物就跟 IDL 中声明的接口很像，直接使用类似函数的方式输入参数就可以发起网络请求，这无疑比 Typescript 中只能在第一个参数`props`中输入参数的方式更符合直觉。
+
+同样的，这里也引入了一个外部的请求库`"github.com/imroc/req/v3"`。对 Go 这种语言，我其实是想用原生写法直接上的，但研究了一下之后觉得原生方法好像对我的智力有一定的压力，所以最终还是采用了和 Typescript 一样的方法，使用外部库来实现了这个功能。
 
 # 如何编写 Omi IDL 文件
 
@@ -189,16 +417,12 @@ service Import {
 
 在 VS Code 扩展商店搜索 omi-idl-extension 即可找到语法支持扩展，虽然有基本的高亮和错误提示，但目前的实现还比较简陋。
 
+现在这个词法分析使用的还是 AST Parser 中顺便实现的一点功能，所以比较卡，而且基本只能提示你这个 IDL 文件能不能通过编译，将来时间充分的话我想用 Golang 重新写一版，但鉴于我现在还比较菜，所以这个事儿的优先级可能不会太高，说不定得明年才能弄了。
+
 # 多语言支持
 
-虽然 Omi IDL 在语法上被设计为语言无关，但受到工作量的制约，目前对多语言的支持还比较薄弱：
+虽然 Omi IDL 在语法上被设计为语言无关，但受到工作量的制约，目前对多语言的支持还比较薄弱，支持的语言主要有以下几种：
 
-- 服务端
+- Typescript
 
-  - Typescript
-
-  - C#
-
-- 客户端
-
-  - Typescript
+- Go
