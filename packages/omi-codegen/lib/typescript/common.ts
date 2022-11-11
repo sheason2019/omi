@@ -65,22 +65,6 @@ export const generateStruct = (ast: StructDeclarationNode): string => {
   return row.join("\n");
 };
 
-export const generateArgumentsType = (args: FunctionArgumentsNode) => {
-  const row = [];
-  row.push("{");
-  for (const item of args.body) {
-    if (item.type === "VariableDeclaration") {
-      row.push(
-        `  ${item.identify}: ${formatMap.get(item.format) ?? item.format}${
-          item.repeated ? "[]" : ""
-        } ${item.optional ? " | undefined" : ""};`
-      );
-    }
-  }
-  row.push("}");
-  return row.join("");
-};
-
 const timeStr = () => {
   const time = new Date();
   return (

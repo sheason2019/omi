@@ -159,7 +159,7 @@ const generateRequestType = (
           md5,
           importFormatMap,
           importUsedMap
-        )} \`${bindMehod}:"${item.identify}"\``
+        )} \`${bindMehod}:"${item.identify}"${item.repeated ? "[]" : ""}\``
       );
       variableCount++;
     }

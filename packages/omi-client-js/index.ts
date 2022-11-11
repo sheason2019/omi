@@ -31,9 +31,7 @@ export abstract class OmiClientBase {
   clientOption?: OmiOption | (() => OmiOption);
 
   // 获取请求时的Option
-  getOption(option?: OmiOption | (() => OmiOption)): OmiOption {
-    // 用户直接在方法里声明的Option参数
-    const apiOption = parseOption(option);
+  getOption(): OmiOption {
     // Client的默认Option参数
     const clientOption = parseOption(this.clientOption);
     // 全局的Static Option参数
@@ -42,7 +40,6 @@ export abstract class OmiClientBase {
     return {
       ...staticOption,
       ...clientOption,
-      ...apiOption,
     };
   }
 
@@ -74,15 +71,14 @@ export abstract class OmiClientBase {
   async request<ResponseType extends any>(
     path: string,
     method: Method,
-    props: any,
-    option?: Omit<AxiosRequestConfig, "params">
+    props: any
   ): Promise<[OmiError, null] | [null, ResponseType]> {
     const axiosInstance = this.getAxiosInstance();
     try {
       const url = this.host + path;
       if (method === "Get") {
         const res = await axiosInstance.get<ResponseType>(url, {
-          ...this.getOption(option),
+          ...this.getOption(),
           params: props,
         });
         return [null, res.data];
@@ -91,13 +87,13 @@ export abstract class OmiClientBase {
         const res = await axiosInstance.post<ResponseType>(
           url,
           props,
-          this.getOption(option)
+          this.getOption()
         );
         return [null, res.data];
       }
       if (method === "Delete") {
         const res = await axiosInstance.delete<ResponseType>(url, {
-          ...this.getOption(option),
+          ...this.getOption(),
           params: props,
         });
         return [null, res.data];
@@ -106,7 +102,7 @@ export abstract class OmiClientBase {
         const res = await axiosInstance.patch<ResponseType>(
           url,
           props,
-          this.getOption(option)
+          this.getOption()
         );
         return [null, res.data];
       }
@@ -114,7 +110,7 @@ export abstract class OmiClientBase {
         const res = await axiosInstance.put<ResponseType>(
           url,
           props,
-          this.getOption(option)
+          this.getOption()
         );
         return [null, res.data];
       }

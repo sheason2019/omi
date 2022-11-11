@@ -66,7 +66,7 @@ const generateService = (service: ServiceDeclarationNode) => {
 
 const generateDefinition = (service: ServiceDeclarationNode) => {
   const row = [];
-  row.push(`type Type${service.identify}Definition struct {`);
+  row.push(`type type${service.identify}Definition struct {`);
   for (const item of service.content.body) {
     if (item.type === "FunctionDeclaration") {
       const name = upperSnackMethodName(item.identify) + "_PATH";
@@ -77,7 +77,7 @@ const generateDefinition = (service: ServiceDeclarationNode) => {
   row.push("}");
 
   row.push(
-    `var ${service.identify}Definition = &Type${service.identify}Definition{`
+    `var ${service.identify}Definition = &type${service.identify}Definition{`
   );
   for (const item of service.content.body) {
     if (item.type === "FunctionDeclaration") {

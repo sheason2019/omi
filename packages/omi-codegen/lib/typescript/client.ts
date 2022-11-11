@@ -2,26 +2,38 @@ import {
   FunctionDeclarationNode,
   ServiceDeclarationNode,
   ProgramNode,
+  VariableDeclarationNode,
 } from "@omi-stack/omi-ast-parser";
 import prettier from "prettier";
 import {
-  generateArgumentsType,
   generateEnum,
   generateImport,
   generateStruct,
   responseType,
   staticComment,
 } from "./common";
+import formatMap from "./format-map";
 
 const generateFunction = (func: FunctionDeclarationNode, namespace: string) => {
-  return ` ${func.identify}(props: ${generateArgumentsType(
-    func.arguments
-  )}, option?: Omit<AxiosRequestConfig, "params">) {
+  const variables = func.arguments.body.filter(
+    (arg) => arg.type === "VariableDeclaration"
+  ) as VariableDeclarationNode[];
+
+  const args = variables.map(
+    (item) =>
+      `${item.identify}${item.optional ? "?" : ""}: ${
+        formatMap.get(item.format) ?? item.format
+      }${item.repeated ? "[]" : ""}`
+  );
+
+  const props = `{ ${variables.map((item) => item.identify).join(",")} }`;
+
+  return ` ${func.identify}(${args.join(",")}) {
     const url = "${namespace}.${func.identify.replace(func.method, "")}";
     const method = "${func.method}";
     return this.request<${responseType(
       func.returnType
-    )}>(url, method, props, option);
+    )}>(url, method, ${props});
   }`;
 };
 
