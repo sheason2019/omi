@@ -11,6 +11,7 @@ struct Todo {
 service ITodo {
   repeated Todo GetTodoList();
   void PostTodo(string content, int id, repeated Todo childTodo);
+  void DeleteTodo(repeated int ids);
   void PutTodo(Todo todo);
   void DeleteTodo(int id);
   void Login();
