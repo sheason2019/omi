@@ -4,12 +4,13 @@ struct Todo {
   boolean finish;
   int createTime;
   optional TodoType todoType;
+  repeated Todo ChildTodo;
 }
 
 // block
 service ITodo {
   repeated Todo GetTodoList();
-  void PostTodo(string content, int id);
+  void PostTodo(string content, int id, repeated Todo childTodo);
   void PutTodo(Todo todo);
   void DeleteTodo(int id);
   void Login();
