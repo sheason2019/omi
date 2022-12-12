@@ -1,7 +1,6 @@
 import {
   ImportDeclarationNode,
   StructDeclarationNode,
-  FunctionArgumentsNode,
   FormatNode,
   EnumContentNode,
   EnumDeclarationNode,
@@ -65,26 +64,8 @@ export const generateStruct = (ast: StructDeclarationNode): string => {
   return row.join("\n");
 };
 
-const timeStr = () => {
-  const time = new Date();
-  return (
-    time.getFullYear() +
-    "年" +
-    (time.getMonth() + 1) +
-    "月" +
-    time.getDate() +
-    "日 " +
-    time.getHours() +
-    ":" +
-    time.getMinutes() +
-    ":" +
-    time.getSeconds()
-  );
-};
-
 export const staticComment = `/**
 * 本文件由Omi.js自动生成，谨慎改动！
-* 生成时间：${timeStr()}.
 */`;
 
 export const responseType = (format: FormatNode) => {

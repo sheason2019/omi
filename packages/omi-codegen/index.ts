@@ -12,6 +12,7 @@ import GolangCommonGenerator from "./lib/golang/common";
 import GolangClientGenerator from "./lib/golang/client";
 import { parseFormatFlag } from "./lib/golang/format-map";
 import suffixDeal from "./lib/golang/suffix-deal";
+import { createTimeStampFile } from "./lib/common/create-time-stamp-file";
 
 interface CodegenMapItem {
   // 文件的MD5码
@@ -187,6 +188,7 @@ export class OmiCodegen {
     outputMap.forEach((content, key) => {
       fs.writeFileSync(key, outputMap.get(key)!);
     });
+    createTimeStampFile(targetDir);
   }
 
   toGo(
@@ -254,6 +256,8 @@ export class OmiCodegen {
         );
       }
     });
+
+    createTimeStampFile(targetDir)
   }
 }
 
