@@ -14,8 +14,9 @@ type TokenStruct struct {
 
 // 解析代码的上下文
 type parseContext struct {
-	// 引号状态 0表示不在引号状态 1表示正在使用单引号 2表示正在使用双引号
-	QuoteMethod uint
-	// 注释状态 0表示不在注释状态 1表示正在使用单行注释 2表示正在使用多行注释
-	CommentMethod uint
+	// 是否正在创建字符串
+	QuoteMethod bool
+
+	// 字符缓冲区，用来写入Token
+	Buf []byte
 }
