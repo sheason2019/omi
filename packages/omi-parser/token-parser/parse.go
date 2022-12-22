@@ -10,7 +10,7 @@ func Parse(content string) ([]TokenStruct, error) {
 
 	rows := strings.Split(content, "\n")
 	for index, rowStr := range rows {
-		tokenList = append(tokenList, tokenParser(ctx, rowStr, uint(index))...)
+		tokenList = append(tokenList, rowParser(ctx, rowStr, uint(index))...)
 	}
 
 	return tokenList, nil

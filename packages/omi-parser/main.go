@@ -12,10 +12,9 @@ const testContent = `struct Todo {
   int32 createTime;
 } // inline comments
 
-/*test comment info*/
 service Todo {
   repeated Todo GetTodoList();
-  void PostTodo(Todo/*try*/todo); // 提交TODO信息
+  void PostTodo(Todo todo); // 提交TODO信息
   void PutTodo(Todo todo);
   void DeleteTodo(Todo todo);
 }`
