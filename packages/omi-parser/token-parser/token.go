@@ -3,6 +3,8 @@
 **/
 package token_parser
 
+import "github.com/sheason2019/omi/omi-parser/utils"
+
 var spaceChar = []byte{' ', '\n'}
 
 var signalChar = []byte{'(', ')', '{', '}', ';', '?', '/', ','}
@@ -23,6 +25,7 @@ func rowParser(ctx *parseContext, rowStr string, rowIndex uint) []TokenStruct {
 			}
 			if !ctx.QuoteMethod {
 				flushBuf(buf, rowIndex, i, &tokens)
+				tokens[len(tokens)-1].TokenType = "string"
 			}
 			continue
 		}
@@ -64,6 +67,9 @@ func rowParser(ctx *parseContext, rowStr string, rowIndex uint) []TokenStruct {
 	}
 
 	flushBuf(buf, rowIndex, len(rowStr), &tokens)
+	if ctx.QuoteMethod {
+		tokens[len(tokens)-1].TokenType = "string"
+	}
 
 	return tokens
 }
@@ -86,13 +92,13 @@ func flushBuf(buf *[]byte, line uint, col int, tokens *[]TokenStruct) {
 
 // 检查当前byte是否应该被分割
 func checkByte(char byte) int {
-	if exist(spaceChar, char) {
+	if utils.Exist(spaceChar, char) {
 		return 1
 	}
-	if exist(signalChar, char) {
+	if utils.Exist(signalChar, char) {
 		return 2
 	}
-	if exist(quoteChar, char) {
+	if utils.Exist(quoteChar, char) {
 		return 3
 	}
 	return 0
