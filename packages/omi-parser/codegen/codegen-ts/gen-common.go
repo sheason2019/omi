@@ -1,20 +1,25 @@
-package codegen_js
+package codegen_ts
 
 import (
-	codegen_common "github.com/sheason2019/omi/omi-parser/codegen/codegen-common"
+	"strings"
+
 	tree_builder "github.com/sheason2019/omi/omi-parser/tree-builder"
 )
 
 // 处理公共的代码生成
 // 即Struct
-func genCommon(ctx *codegen_common.CodegenContext, tree *tree_builder.TreeContext) {
+func genCommon(tree *tree_builder.TreeContext) string {
+	row := []string{}
+
+	genImport(tree.StructMap, &row, true)
+
 	for _, item := range tree.StructMap {
 		// 先不处理import的变量
 		if item.SourcePath != nil {
 			continue
 		}
 
-		str := `interface ` + item.Identify.Content + ` {`
+		str := `export interface ` + item.Identify.Content + ` {`
 		for i, variable := range item.Variables {
 			if i == 0 {
 				str = str + "\n"
@@ -30,6 +35,8 @@ func genCommon(ctx *codegen_common.CodegenContext, tree *tree_builder.TreeContex
 			str = str + ";\n"
 		}
 		str = str + "}\n"
-		ctx.RowContent = append(ctx.RowContent, str)
+		row = append(row, str)
 	}
+
+	return strings.Join(row, "\n")
 }

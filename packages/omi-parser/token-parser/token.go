@@ -30,18 +30,13 @@ func rowParser(ctx *parseContext, rowStr string, rowIndex uint) []TokenStruct {
 			continue
 		}
 
-		// 下面是常规循环
-		check := checkByte(char)
-		// 为0时需要将字符写入buf
-		if check == 0 {
-			*buf = append(*buf, char)
-		}
-		// 为1时表示遇到了空格或换行符，需要将buf中的字符串写入Token
-		if check == 1 {
+		// 遇到了空格或换行符时，需要将buf中的字符串写入Token
+		if utils.Exist(spaceChar, char) {
 			flushBuf(buf, rowIndex, i, &tokens)
+			continue
 		}
-		// 为2时表示遇到了符号，除了将当前的buf写入Token以外，还需要将符号也一并写入Token
-		if check == 2 {
+		// 遇到了符号时，除了将当前的buf写入Token以外，还需要将符号也一并写入Token
+		if utils.Exist(signalChar, char) {
 			flushBuf(buf, rowIndex, i, &tokens)
 			*buf = append(*buf, char)
 			flushBuf(buf, rowIndex, i+1, &tokens)
@@ -51,19 +46,23 @@ func rowParser(ctx *parseContext, rowStr string, rowIndex uint) []TokenStruct {
 					break
 				}
 			}
+			continue
 		}
-		// check值为3时表示遇到了引号，此时除了将buf写入Token外，还需要在上下文中添加相关的信息，字符串标注仅能使用双引号
-		if check == 3 {
+		// 遇到了引号时，除了将buf写入Token外，还需要在上下文中添加相关的信息，字符串标注仅能使用双引号
+		if utils.Exist(quoteChar, char) {
 			flushBuf(buf, rowIndex, i, &tokens)
 			*buf = append(*buf, char)
 			if char == '\'' {
-				// 使用单引号时错误的行为，之后会在这里标注错误信息
+				// 使用单引号是错误的行为，之后会在这里标注错误信息
 				flushBuf(buf, rowIndex, i+1, &tokens)
 			} else {
 				// 进入字符串模式
 				ctx.QuoteMethod = true
 			}
+			continue
 		}
+
+		*buf = append(*buf, char)
 	}
 
 	flushBuf(buf, rowIndex, len(rowStr), &tokens)
@@ -88,18 +87,4 @@ func flushBuf(buf *[]byte, line uint, col int, tokens *[]TokenStruct) {
 		*buf = []byte{}
 		*tokens = append(*tokens, token)
 	}
-}
-
-// 检查当前byte是否应该被分割
-func checkByte(char byte) int {
-	if utils.Exist(spaceChar, char) {
-		return 1
-	}
-	if utils.Exist(signalChar, char) {
-		return 2
-	}
-	if utils.Exist(quoteChar, char) {
-		return 3
-	}
-	return 0
 }

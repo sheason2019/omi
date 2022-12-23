@@ -1,6 +1,6 @@
-import { Todo, TodoType } from "./todo.omi";
+import { Todo } from "./todo.omi";
 
 service Import {
-  repeated Todo GetTodo(int id);
-  TodoType GetTodoType();
+  Todo GetTodo(int id);
+  Todo GetTodoType();
 }

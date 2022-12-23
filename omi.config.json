@@ -1,6 +1,6 @@
 [
   {
-    "entry": ["./hello.omi"],
+    "entry": ["packages/omi-codegen/test-idl/common.omi"],
     "lang": "ts",
     "targetDir": "./omi",
     "method": "server"

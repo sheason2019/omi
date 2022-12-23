@@ -10,19 +10,19 @@ import (
 const deafult_config_file_name = "omi.config.json"
 
 // 寻找Config文件
-func dispatchConfigPath(filePath *string) (string, error) {
+func dispatchConfigPath(filePath string) (string, error) {
 	directory, err := os.Getwd()
 	if err != nil {
 		return "", err
 	}
 
 	// 当filepath参数不为空时，表示用户指定了一个文件进行访问
-	if filePath != nil {
-		if !path.IsAbs(*filePath) {
-			absDir := directory + "/" + *filePath
+	if len(filePath) > 0 {
+		if !path.IsAbs(filePath) {
+			absDir := directory + "/" + filePath
 			return path.Clean(absDir), nil
 		}
-		return *filePath, nil
+		return filePath, nil
 	}
 
 	// 否则向上遍历配置文件

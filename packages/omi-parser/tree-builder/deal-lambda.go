@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/sheason2019/omi/omi-parser/common"
+	"github.com/sheason2019/omi/omi-parser/utils"
 )
 
 func dealLambda(svcDef *ServiceDefine, ts *TokenStream) *common.ErrorBlock {
@@ -42,6 +43,9 @@ func dealLambda(svcDef *ServiceDefine, ts *TokenStream) *common.ErrorBlock {
 		argTypeToken := ts.Read()
 		argTypeToken.TokenType = "struct"
 		lambdaDef.ArgType = argTypeToken
+		if utils.Exist(basicTypes, argTypeToken.Content) {
+			return common.HandleErrorWithToken(errors.New("必须使用结构体作为接口的参数"), argTypeToken)
+		}
 
 		argNameToken := ts.NextUseful()
 		if argNameToken == nil {

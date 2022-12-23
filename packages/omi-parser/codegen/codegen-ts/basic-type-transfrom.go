@@ -1,4 +1,4 @@
-package codegen_js
+package codegen_ts
 
 // 基本类型转换Map
 func getBasicTypeTransformMap() map[string]string {

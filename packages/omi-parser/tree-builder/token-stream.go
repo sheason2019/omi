@@ -1,6 +1,8 @@
 package tree_builder
 
-import token_parser "github.com/sheason2019/omi/omi-parser/token-parser"
+import (
+	token_parser "github.com/sheason2019/omi/omi-parser/token-parser"
+)
 
 type TokenStream struct {
 	ptr  uint

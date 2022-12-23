@@ -3,21 +3,15 @@ struct Todo {
   string content;
   boolean finish;
   int createTime;
-  optional TodoType todoType;
+  Todo todoType;
   repeated Todo ChildTodo;
 }
 
 // block
 service ITodo {
-  repeated Todo GetTodoList();
-  void PostTodo(string content, int id, repeated Todo childTodo);
-  void DeleteTodo(repeated int ids);
+  Todo GetTodoList();
+  void PostTodo(Todo todo);
   void PutTodo(Todo todo);
   void DeleteTodo(int id);
   void Login();
-}
-
-enum TodoType {
-  Normal,
-  Topping,
 }

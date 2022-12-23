@@ -27,6 +27,8 @@ func Build(tokens *[]token_parser.TokenStruct) *TreeContext {
 		keyword, err := fetchKeyword(token)
 		if err != nil {
 			ctx.ErrorBlocks = append(ctx.ErrorBlocks, *common.HandleErrorWithToken(err, token))
+			nextSyntax(&tokenStream)
+			tokenStream.NextUseful()
 			continue
 		}
 		// dealKeyword是一个基于函数的状态机，它根据Keyword确定语句解析的逻辑链路
@@ -42,7 +44,6 @@ func Build(tokens *[]token_parser.TokenStruct) *TreeContext {
 		if token == nil {
 			break
 		}
-
 	}
 
 	return &ctx
