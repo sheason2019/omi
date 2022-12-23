@@ -11,6 +11,7 @@ func dealLambda(svcDef *ServiceDefine, ts *TokenStream) *common.ErrorBlock {
 
 	// 由于调用dealLambda之前经过了nil校验，所以这里Read到的指针必然不为nil
 	rtnTypeToken := ts.Read()
+	rtnTypeToken.TokenType = "struct"
 	lambdaDef.RtnType = rtnTypeToken
 
 	identifyToken := ts.NextUseful()
@@ -23,6 +24,7 @@ func dealLambda(svcDef *ServiceDefine, ts *TokenStream) *common.ErrorBlock {
 		}
 	}
 	lambdaDef.Identify = identifyToken
+	identifyToken.TokenType = "function"
 	svcDef.Lambdas = append(svcDef.Lambdas, &lambdaDef)
 
 	// arg上下文起始符
@@ -38,6 +40,7 @@ func dealLambda(svcDef *ServiceDefine, ts *TokenStream) *common.ErrorBlock {
 
 	if !closeArg {
 		argTypeToken := ts.Read()
+		argTypeToken.TokenType = "struct"
 		lambdaDef.ArgType = argTypeToken
 
 		argNameToken := ts.NextUseful()

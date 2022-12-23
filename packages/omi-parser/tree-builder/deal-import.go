@@ -24,10 +24,11 @@ func dealImport(ctx *TreeContext, tokenStream *TokenStream) *common.ErrorBlock {
 		identifyToken.TokenType = "struct"
 		structDef := StructDefine{}
 		structDef.Identify = identifyToken
-		if ctx.StructMap[identifyToken.Content] != nil {
+		if ctx.DeclareMap[identifyToken.Content] {
 			return common.HandleErrorWithToken(errors.New("类型已存在"), identifyToken)
 		} else {
 			ctx.StructMap[identifyToken.Content] = &structDef
+			ctx.DeclareMap[identifyToken.Content] = true
 			structs = append(structs, &structDef)
 		}
 

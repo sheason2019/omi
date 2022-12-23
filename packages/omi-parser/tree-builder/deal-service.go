@@ -16,11 +16,12 @@ func dealService(ctx *TreeContext, ts *TokenStream) *common.ErrorBlock {
 	}
 
 	identifyToken.TokenType = "struct"
-	if ctx.ServiceMap[identifyToken.Content] != nil {
+	if ctx.DeclareMap[identifyToken.Content] {
 		return common.HandleErrorWithToken(errors.New("该Service名称已存在"), identifyToken)
 	}
 	serviceDef.Identify = identifyToken
 	ctx.ServiceMap[identifyToken.Content] = &serviceDef
+	ctx.DeclareMap[identifyToken.Content] = true
 
 	// 进入Service的上下文
 	block := common.ShouldTokenContent(ts.NextUseful(), "{")

@@ -9,6 +9,7 @@ type TreeContext struct {
 	ErrorBlocks []common.ErrorBlock
 	StructMap   map[string]*StructDefine
 	ServiceMap  map[string]*ServiceDefine
+	DeclareMap  map[string]bool
 }
 
 type StructDefine struct {

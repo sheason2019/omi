@@ -1,0 +1,8 @@
+[
+  {
+    "entry": ["./hello.omi"],
+    "lang": "ts",
+    "targetDir": "./omi",
+    "method": "server"
+  }
+]

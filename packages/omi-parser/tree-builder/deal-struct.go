@@ -13,10 +13,12 @@ func dealStruct(ctx *TreeContext, ts *TokenStream) *common.ErrorBlock {
 	if identifyToken == nil {
 		return common.HandleErrorWithToken(errors.New("缺少结构体名称"), identifyToken)
 	}
-	if ctx.StructMap[identifyToken.Content] != nil {
+	if ctx.DeclareMap[identifyToken.Content] {
 		return common.HandleErrorWithToken(errors.New("结构体 "+identifyToken.Content+" 已存在"), identifyToken)
 	}
 	ctx.StructMap[identifyToken.Content] = &structDef
+	ctx.DeclareMap[identifyToken.Content] = true
+	structDef.Identify = identifyToken
 
 	// 进入结构体定义上下文
 	block := common.ShouldTokenContent(ts.NextUseful(), "{")

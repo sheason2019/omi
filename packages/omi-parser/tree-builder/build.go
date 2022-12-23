@@ -12,6 +12,7 @@ func Build(tokens *[]token_parser.TokenStruct) *TreeContext {
 	ctx.ErrorBlocks = []common.ErrorBlock{}
 	ctx.ServiceMap = make(map[string]*ServiceDefine)
 	ctx.StructMap = make(map[string]*StructDefine)
+	ctx.DeclareMap = make(map[string]bool)
 
 	tokenStream := TokenStream{}
 	tokenStream.Init(tokens)

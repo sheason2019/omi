@@ -49,7 +49,7 @@ func variableTypeDeclare(variableDef *VariableDefine, ts *TokenStream) *common.E
 		if variableDef.Required != nil {
 			return common.HandleErrorWithToken(errors.New("重复声明的修饰符"), token)
 		}
-		token.TokenType = "keyword"
+		token.TokenType = "format"
 		variableDef.Required = token
 		return nil
 	}
@@ -57,7 +57,7 @@ func variableTypeDeclare(variableDef *VariableDefine, ts *TokenStream) *common.E
 		if variableDef.Repeated != nil {
 			return common.HandleErrorWithToken(errors.New("重复声明的修饰符"), token)
 		}
-		token.TokenType = "keyword"
+		token.TokenType = "format"
 		variableDef.Repeated = token
 		return nil
 	}
