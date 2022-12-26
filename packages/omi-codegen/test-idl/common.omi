@@ -1,6 +1,10 @@
 import { Todo } from "./todo.omi";
 
+struct GetTodoPayload {
+  int id;
+}
+
 service Import {
-  Todo GetTodo(int id);
+  Todo GetTodo(GetTodoPayload payload);
   Todo GetTodoType();
 }
