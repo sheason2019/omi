@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from "axios";
-import { Todo } from "../todo";
 import { GetTodoPayload } from ".";
+import { Todo } from "../todo";
 
 interface ClientConfig {
 		host?: string;

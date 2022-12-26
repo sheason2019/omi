@@ -19,16 +19,18 @@ func (dispatcher *FileDispatcher) ParseConfig(configCtx config_dispatcher.Config
 		} else {
 			absPath = path.Clean(dispatcher.PackageRoot + `/` + filePath)
 		}
-		err := dispatcher.ParseFile(absPath, dispatcher.DefaultMethod)
+		fileCtx, err := dispatcher.ParseFile(absPath)
 		if err != nil {
 			return err
 		}
+		fileCtx.Method = dispatcher.DefaultMethod
 	}
 
 	return nil
 }
 
-func (dispatcher *FileDispatcher) ParseFile(filePath string, method string) error {
+// FileDispatcher会解析指定的文件，将TokenList以及TreeContext写入到
+func (dispatcher *FileDispatcher) ParseFile(filePath string) (*FileContext, error) {
 	ctx := FileContext{}
 	// 文件的基本信息以及去重
 	ctx.FileName = path.Base(filePath)
@@ -38,27 +40,24 @@ func (dispatcher *FileDispatcher) ParseFile(filePath string, method string) erro
 	existPath, exist := dispatcher.FileUniqueMap[ctx.FileName]
 	if exist {
 		if existPath != filePath {
-			return fmt.Errorf("IDL文件名称重复：%s", ctx.FileName)
+			return nil, fmt.Errorf("IDL文件名称重复：%s", ctx.FileName)
 		}
-		return nil
+		return &ctx, nil
 	}
 	dispatcher.FileUniqueMap[ctx.FileName] = ctx.FilePath
 	dispatcher.FileStore[filePath] = &ctx
 
-	// Method定义
-	ctx.Method = method
-
 	// 文件内容写入
 	content, err := os.ReadFile(filePath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	ctx.Content = string(content)
 
 	// 解析Token并生成词法树
 	tokenList, err := token_parser.Parse(ctx.Content)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	treeCtx := tree_builder.Build(&tokenList)
 	if len(treeCtx.ErrorBlocks) != 0 {
@@ -66,13 +65,14 @@ func (dispatcher *FileDispatcher) ParseFile(filePath string, method string) erro
 		for _, err := range treeCtx.ErrorBlocks {
 			errInfo = errInfo + fmt.Sprintf("[%d, %d] %s\n", err.FromRow, err.FromCol, err.Message)
 		}
-		return fmt.Errorf(errInfo)
+		return nil, fmt.Errorf(errInfo)
 	}
+	ctx.TokenList = &tokenList
 	ctx.TreeContext = treeCtx
 	err = dispatcher.ParseTreeImport(treeCtx, filePath[:strings.Index(filePath, path.Base(filePath))])
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &ctx, nil
 }

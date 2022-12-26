@@ -1,9 +1,13 @@
 package file_dispatcher
 
-import tree_builder "github.com/sheason2019/omi/tree-builder"
+import (
+	token_parser "github.com/sheason2019/omi/token-parser"
+	tree_builder "github.com/sheason2019/omi/tree-builder"
+)
 
 type FileDispatcher struct {
-	PackageRoot   string
+	PackageRoot string
+	// 标注产物的服务对象端，可选项有：client、server、all、common
 	DefaultMethod string
 
 	FileStore     map[string]*FileContext
@@ -18,7 +22,10 @@ type FileContext struct {
 	// 生成的产物类型 common client server all
 	Method string
 
+	// 词法树的上下文
 	TreeContext *tree_builder.TreeContext
+	// TokenList的上下文
+	TokenList *[]token_parser.TokenStruct
 
 	// 生成的产物
 	ProductCommon string

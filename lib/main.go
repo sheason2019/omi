@@ -1,43 +1,54 @@
 package main
 
 import (
-	"path"
-	"strings"
+	"errors"
+	"os"
 
-	codegen_ts "github.com/sheason2019/omi/codegen/codegen-ts"
-	config_dispatcher "github.com/sheason2019/omi/config-dispatcher"
-	file_dispatcher "github.com/sheason2019/omi/file-dispatcher"
+	"github.com/sheason2019/omi/executable"
+	"github.com/urfave/cli/v2"
 )
 
 func main() {
-	configFilePath := ""
-	configs, configFilePath, err := config_dispatcher.GetConfigs(configFilePath)
-	if err != nil {
-		panic(err)
+	// 生成代码
+	app := cli.App{
+		Name:  "Omi-IDL",
+		Usage: "一个用于同步前端和服务端之间接口代码的静态代码生成工具",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "file",
+				Value: "",
+				Usage: "指定配置文件的路径",
+			},
+			&cli.BoolFlag{
+				Name:  "token",
+				Value: false,
+				Usage: "当该字段为true时，CLI不会生成代码，而是生成TokenList，配合VS Code实现代码高亮",
+			},
+		},
+		Action: func(ctx *cli.Context) error {
+			filePath := ctx.String("file")
+			genToken := ctx.Bool("token")
+			var err error
+			if genToken {
+				if len(filePath) == 0 {
+					return errors.New("生成Token时必须指定IDL文件")
+				}
+				err = executable.GenToken(filePath)
+			} else {
+				err = executable.GenCode(filePath)
+			}
+
+			if err != nil {
+				return err
+			}
+
+			return nil
+		},
 	}
 
-	// 拿到项目根目录的路径
-	packageRoot := (configFilePath)[0:strings.LastIndex(configFilePath, "/")]
-
-	// 根据配置文件解析出所有需要用到的语法树
-	for _, config := range configs {
-		dispatcher := file_dispatcher.New()
-		dispatcher.PackageRoot = packageRoot
-		dispatcher.DefaultMethod = config.Method
-		err := dispatcher.ParseConfig(config)
-		if err != nil {
-			panic(err)
-		}
-
-		for _, fileCtx := range dispatcher.FileStore {
-			codegen_ts.Gen(fileCtx)
-		}
-
-		outDir := path.Clean(packageRoot + "/" + config.TargetDir)
-		err = dispatcher.GenerateTypescript(outDir)
-		if err != nil {
-			panic(err)
-		}
+	err := app.Run(os.Args)
+	if err != nil {
+		panic(err)
 	}
 
 }
