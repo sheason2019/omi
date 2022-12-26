@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/sheason2019/omi/executable"
+	"github.com/sheason2019/omi/utils"
 	"github.com/urfave/cli/v2"
 )
 
@@ -28,18 +29,21 @@ func main() {
 		Action: func(ctx *cli.Context) error {
 			filePath := ctx.String("file")
 			genToken := ctx.Bool("token")
-			var err error
+
 			if genToken {
 				if len(filePath) == 0 {
 					return errors.New("生成Token时必须指定IDL文件")
 				}
-				err = executable.GenToken(filePath)
+				outputData, err := executable.GenToken(filePath)
+				if err != nil {
+					return err
+				}
+				utils.JsonLog(outputData.Pack())
 			} else {
-				err = executable.GenCode(filePath)
-			}
-
-			if err != nil {
-				return err
+				err := executable.GenCode(filePath)
+				if err != nil {
+					return err
+				}
 			}
 
 			return nil
@@ -48,7 +52,8 @@ func main() {
 
 	err := app.Run(os.Args)
 	if err != nil {
-		panic(err)
+		utils.JsonLog(executable.ErrorOutput{
+			Message: err.Error(),
+		})
 	}
-
 }

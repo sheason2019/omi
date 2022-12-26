@@ -1,13 +1,12 @@
 import { execFile } from "node:child_process";
+import { IOutputContainer } from "./typings";
 
 const args = process.argv.slice(2);
-console.log(args);
 
 execFile("./omi", args, (err, stdout, stderr) => {
-  if (err) {
-    console.error(err);
-    return;
-  }
+  const action: IOutputContainer = JSON.parse(stdout);
+
+  
   if (stdout) {
     console.log("STDOUT::\n" + stdout);
     return;
