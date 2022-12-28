@@ -1,5 +1,3 @@
-
-
 export interface GetTodoPayload {
-id?: number;
+  id?: number;
 }

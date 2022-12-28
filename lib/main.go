@@ -25,10 +25,16 @@ func main() {
 				Value: false,
 				Usage: "当该字段为true时，CLI不会生成代码，而是生成TokenList，配合VS Code实现代码高亮",
 			},
+			&cli.BoolFlag{
+				Name:  "log",
+				Value: true,
+				Usage: "是否在代码生成过程中生成日志",
+			},
 		},
 		Action: func(ctx *cli.Context) error {
 			filePath := ctx.String("file")
 			genToken := ctx.Bool("token")
+			showLog := ctx.Bool("log")
 
 			if genToken {
 				if len(filePath) == 0 {
@@ -40,7 +46,7 @@ func main() {
 				}
 				utils.JsonLog(outputData.Pack())
 			} else {
-				err := executable.GenCode(filePath)
+				err := executable.GenCode(filePath, showLog)
 				if err != nil {
 					return err
 				}
