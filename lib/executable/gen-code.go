@@ -67,7 +67,7 @@ func GenCode(configPath string, showLog bool) error {
 		go func(index int) {
 			logger.Log(fmt.Sprintf("[%d/%d]正在格式化文件内容", index+1, len(configs)))
 			exec.Command("npx", "prettier", "--write", outDir).Run()
-			logger.Log(fmt.Sprintf("[%d/%d]已完成\n", index+1, len(configs)))
+			logger.Log(fmt.Sprintf("[%d/%d]已完成", index+1, len(configs)))
 			wg.Done()
 		}(index)
 	}
