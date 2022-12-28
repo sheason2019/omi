@@ -1,12 +1,12 @@
 [
   {
-    "entry": ["packages/omi-codegen/test-idl/common.omi"],
+    "entry": ["test/test-idl/common.omi"],
     "lang": "ts",
     "targetDir": "./test/server-ts/idl-lib",
     "method": "server"
   },
   {
-    "entry": ["packages/omi-codegen/test-idl/common.omi"],
+    "entry": ["test/test-idl/common.omi"],
     "lang": "ts",
     "targetDir": "./test/client-ts/idl-lib",
     "method": "client"
