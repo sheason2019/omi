@@ -19,7 +19,7 @@ func (dispatcher *FileDispatcher) ParseConfig(configCtx config_dispatcher.Config
 		} else {
 			absPath = path.Clean(dispatcher.PackageRoot + `/` + filePath)
 		}
-		fileCtx, err := dispatcher.ParseFile(absPath)
+		fileCtx, err := dispatcher.ParseFile(absPath, "")
 		if err != nil {
 			return err
 		}
@@ -30,7 +30,7 @@ func (dispatcher *FileDispatcher) ParseConfig(configCtx config_dispatcher.Config
 }
 
 // FileDispatcher会解析指定的文件，将TokenList以及TreeContext写入到
-func (dispatcher *FileDispatcher) ParseFile(filePath string) (*FileContext, error) {
+func (dispatcher *FileDispatcher) ParseFile(filePath string, fileContent string) (*FileContext, error) {
 	ctx := FileContext{}
 	// 文件的基本信息以及去重
 	ctx.FileName = path.Base(filePath)
@@ -40,7 +40,7 @@ func (dispatcher *FileDispatcher) ParseFile(filePath string) (*FileContext, erro
 	existPath, exist := dispatcher.FileUniqueMap[ctx.FileName]
 	if exist {
 		if existPath != filePath {
-			return nil, fmt.Errorf("IDL文件名称重复：%s", ctx.FileName)
+			return &ctx, fmt.Errorf("IDL文件名称重复：%s", ctx.FileName)
 		}
 		return &ctx, nil
 	}
@@ -48,30 +48,36 @@ func (dispatcher *FileDispatcher) ParseFile(filePath string) (*FileContext, erro
 	dispatcher.FileStore[filePath] = &ctx
 
 	// 文件内容写入
-	content, err := os.ReadFile(filePath)
-	if err != nil {
-		return nil, err
+	if len(fileContent) == 0 {
+		content, err := os.ReadFile(filePath)
+		if err != nil {
+			return &ctx, err
+		}
+		ctx.Content = string(content)
+	} else {
+		ctx.Content = fileContent
 	}
-	ctx.Content = string(content)
 
 	// 解析Token并生成词法树
 	tokenList, err := token_parser.Parse(ctx.Content)
 	if err != nil {
-		return nil, err
+		return &ctx, err
 	}
+	ctx.TokenList = &tokenList
+
 	treeCtx := tree_builder.Build(&tokenList)
 	if len(treeCtx.ErrorBlocks) != 0 {
 		errInfo := fmt.Sprintf("IDL文件语法有误：%s\n", filePath)
 		for _, err := range treeCtx.ErrorBlocks {
 			errInfo = errInfo + fmt.Sprintf("[%d, %d] %s\n", err.FromRow, err.FromCol, err.Message)
 		}
-		return nil, fmt.Errorf(errInfo)
+		return &ctx, fmt.Errorf(errInfo)
 	}
-	ctx.TokenList = &tokenList
 	ctx.TreeContext = treeCtx
+
 	err = dispatcher.ParseTreeImport(treeCtx, filePath[:strings.Index(filePath, path.Base(filePath))])
 	if err != nil {
-		return nil, err
+		return &ctx, err
 	}
 
 	return &ctx, nil

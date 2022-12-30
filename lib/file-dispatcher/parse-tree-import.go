@@ -26,7 +26,7 @@ func (dispatcher *FileDispatcher) ParseTreeImport(tree *tree_builder.TreeContext
 	// 使用Dispather去解析收集到的依赖文件
 	for refPath := range referenceMap {
 		// 因为Import只能导入其他文件定义的结构体，这里直接使用common减少产物代码的大小
-		fileCtx, err := dispatcher.ParseFile(refPath)
+		fileCtx, err := dispatcher.ParseFile(refPath, "")
 		if err != nil {
 			return err
 		}

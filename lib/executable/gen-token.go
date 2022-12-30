@@ -5,11 +5,12 @@ import (
 	"path"
 
 	"github.com/sheason2019/omi/checker"
+	"github.com/sheason2019/omi/common"
 	file_dispatcher "github.com/sheason2019/omi/file-dispatcher"
 )
 
 // 只能针对单一文件进行解析
-func GenToken(filePath string) (*TokenOutput, error) {
+func GenToken(filePath, fileContent string) (*TokenOutput, error) {
 	// 根据filepath获取内容
 	// 然后调用file-dispatcher的ParseFile方法对文件进行解析，从而得到文件的Token信息，同时对不合理的导入值进行报错提示
 	// 最终返回的值应当是一个JSON对象，其中包含Token信息、错误信息
@@ -27,23 +28,26 @@ func GenToken(filePath string) (*TokenOutput, error) {
 	}
 
 	fileDispather := file_dispatcher.New()
-	fileCtx, err := fileDispather.ParseFile(absPath)
+	fileCtx, err := fileDispather.ParseFile(absPath, fileContent)
 	if err != nil {
-		return nil, err
+		return &TokenOutput{
+			TokenList:   *fileCtx.TokenList,
+			ErrorBlocks: []common.ErrorBlock{*common.HandleErrorWithToken(err, nil)},
+		}, err
 	}
 
 	// 导入检查器，校验TreeContext中的StructMap，根据包名从FileStore中拿到其他文件的TreeContext
 	// 然后检查引用的Struct是否存在与指定文件的StructMap中
 	err = checker.CheckImport(fileDispather, fileCtx)
 	if err != nil {
-		return nil, err
+		return &TokenOutput{
+			TokenList:   *fileCtx.TokenList,
+			ErrorBlocks: []common.ErrorBlock{*common.HandleErrorWithToken(err, nil)},
+		}, err
 	}
 
-	// Token和错误信息
-	outputData := TokenOutput{
+	return &TokenOutput{
 		TokenList:   *fileCtx.TokenList,
 		ErrorBlocks: fileCtx.TreeContext.ErrorBlocks,
-	}
-
-	return &outputData, nil
+	}, nil
 }

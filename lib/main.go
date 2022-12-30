@@ -16,9 +16,14 @@ func main() {
 		Usage: "一个用于同步前端和服务端之间接口代码的静态代码生成工具",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  "file",
+				Name:  "filePath",
 				Value: "",
-				Usage: "指定配置文件的路径",
+				Usage: "仅Token模式使用，指定文件的路径",
+			},
+			&cli.StringFlag{
+				Name:  "fileContent",
+				Value: "",
+				Usage: "仅Token模式使用，指定文件的内容",
 			},
 			&cli.BoolFlag{
 				Name:  "token",
@@ -32,7 +37,8 @@ func main() {
 			},
 		},
 		Action: func(ctx *cli.Context) error {
-			filePath := ctx.String("file")
+			filePath := ctx.String("filePath")
+			fileContent := ctx.String("fileContent")
 			genToken := ctx.Bool("token")
 			showLog := ctx.Bool("log")
 
@@ -40,10 +46,7 @@ func main() {
 				if len(filePath) == 0 {
 					return errors.New("生成Token时必须指定IDL文件")
 				}
-				outputData, err := executable.GenToken(filePath)
-				if err != nil {
-					return err
-				}
+				outputData, _ := executable.GenToken(filePath, fileContent)
 				utils.JsonLog(outputData.Pack())
 			} else {
 				err := executable.GenCode(filePath, showLog)

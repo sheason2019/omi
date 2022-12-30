@@ -19,6 +19,7 @@ func dealStruct(ctx *TreeContext, ts *TokenStream) *common.ErrorBlock {
 	ctx.StructMap[identifyToken.Content] = &structDef
 	ctx.DeclareMap[identifyToken.Content] = true
 	structDef.Identify = identifyToken
+	identifyToken.TokenType = "struct"
 
 	// 进入结构体定义上下文
 	block := common.ShouldTokenContent(ts.NextUseful(), "{")
