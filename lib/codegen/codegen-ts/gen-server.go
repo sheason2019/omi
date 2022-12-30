@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	codegen_common "github.com/sheason2019/omi/codegen/codegen-common"
 	tree_builder "github.com/sheason2019/omi/tree-builder"
 )
 
@@ -36,7 +37,7 @@ func genServer(tree *tree_builder.TreeContext) string {
 			str = str + `: ` + typeTrans(lambda.RtnType.Content) + ";\n"
 			importCtx.AddStruct(lambda.RtnType.Content)
 
-			lambdaPath := genPath(service, lambda)
+			lambdaPath := codegen_common.GenPath(service, lambda)
 			def = def + lambda.Identify.Content + "Path = \"" + lambdaPath + "\","
 		}
 
@@ -49,15 +50,4 @@ func genServer(tree *tree_builder.TreeContext) string {
 	row = append([]string{genImport(tree.StructMap, &importCtx)}, row...)
 
 	return strings.Join(row, "\n")
-}
-
-func genPath(service *tree_builder.ServiceDefine, lambda *tree_builder.LambdaDefine) string {
-	method, isfallback := getMehod(lambda.Identify.Content)
-	var endpoint string
-	if isfallback {
-		endpoint = lambda.Identify.Content
-	} else {
-		endpoint = lambda.Identify.Content[len(method):]
-	}
-	return "/" + service.Identify.Content + "." + endpoint
 }
