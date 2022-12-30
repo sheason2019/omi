@@ -23,7 +23,7 @@ func (dispatcher *FileDispatcher) ParseConfig(configCtx config_dispatcher.Config
 		if err != nil {
 			return err
 		}
-		fileCtx.Method = dispatcher.DefaultMethod
+		fileCtx.updateGenTargetByMethod(dispatcher.DefaultMethod)
 	}
 
 	return nil
@@ -39,10 +39,11 @@ func (dispatcher *FileDispatcher) ParseFile(filePath string, fileContent string)
 
 	existPath, exist := dispatcher.FileUniqueMap[ctx.FileName]
 	if exist {
+		ctx := dispatcher.FileStore[filePath]
 		if existPath != filePath {
-			return &ctx, fmt.Errorf("IDL文件名称重复：%s", ctx.FileName)
+			return ctx, fmt.Errorf("IDL文件名称重复：%s", ctx.FileName)
 		}
-		return &ctx, nil
+		return ctx, nil
 	}
 	dispatcher.FileUniqueMap[ctx.FileName] = ctx.FilePath
 	dispatcher.FileStore[filePath] = &ctx

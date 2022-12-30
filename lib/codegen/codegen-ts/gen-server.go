@@ -27,9 +27,11 @@ func genServer(tree *tree_builder.TreeContext) string {
 
 			str = str + lambda.Identify.Content + `(`
 			if lambda.ArgType != nil {
-				str = str + lambda.ArgName.Content + `: ` + typeTrans(lambda.ArgType.Content)
+				str = str + lambda.ArgName.Content + `: ` + typeTrans(lambda.ArgType.Content) + `, `
 				importCtx.AddStruct(lambda.ArgType.Content)
 			}
+			// 适配Nest.js，添加可选参数
+			str = str + `...args: any[]`
 			str = str + `)`
 			str = str + `: ` + typeTrans(lambda.RtnType.Content) + ";\n"
 			importCtx.AddStruct(lambda.RtnType.Content)

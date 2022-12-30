@@ -30,7 +30,7 @@ func (dispatcher *FileDispatcher) ParseTreeImport(tree *tree_builder.TreeContext
 		if err != nil {
 			return err
 		}
-		fileCtx.Method = "common"
+		fileCtx.updateGenTargetByMethod("common")
 	}
 
 	return nil

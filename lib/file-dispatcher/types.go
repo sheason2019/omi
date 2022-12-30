@@ -20,7 +20,9 @@ type FileContext struct {
 	FilePath string
 
 	// 生成的产物类型 common client server all
-	Method string
+	GenProductCommon bool
+	GenProductServer bool
+	GenProductClient bool
 
 	// 词法树的上下文
 	TreeContext *tree_builder.TreeContext

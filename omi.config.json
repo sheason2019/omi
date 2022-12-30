@@ -1,6 +1,6 @@
 [
   {
-    "entry": ["test/test-idl/common.omi"],
+    "entry": ["test/test-idl/common.omi", "test/test-idl/todo.omi"],
     "lang": "ts",
     "targetDir": "./test/server-ts/idl-lib",
     "method": "server"
