@@ -6,7 +6,7 @@ import (
 )
 
 type FileDispatcher struct {
-	PackageRoot string
+	ProjectRoot string
 	// 标注产物的服务对象端，可选项有：client、server、all、common
 	DefaultMethod string
 	// 标注产物的语言类型

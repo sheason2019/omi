@@ -12,15 +12,15 @@ func (dispatcher *FileDispatcher) GenerateTypescript(outDir string) error {
 		if err != nil {
 			return err
 		}
-		err = generateIfContentExist(generatePath(outDir, fileCtx.FileName, "common"), fileCtx.ProductCommon)
+		err = generateIfContentExist(generatePath(outDir, fileCtx.FileName, "common", "ts"), fileCtx.ProductCommon)
 		if err != nil {
 			return err
 		}
-		err = generateIfContentExist(generatePath(outDir, fileCtx.FileName, "server"), fileCtx.ProductServer)
+		err = generateIfContentExist(generatePath(outDir, fileCtx.FileName, "server", "ts"), fileCtx.ProductServer)
 		if err != nil {
 			return err
 		}
-		err = generateIfContentExist(generatePath(outDir, fileCtx.FileName, "client"), fileCtx.ProductClient)
+		err = generateIfContentExist(generatePath(outDir, fileCtx.FileName, "client", "ts"), fileCtx.ProductClient)
 		if err != nil {
 			return err
 		}
@@ -32,8 +32,8 @@ func (dispatcher *FileDispatcher) GenerateTypescript(outDir string) error {
 	return nil
 }
 
-func generatePath(outDir, filename, fileSuffix string) string {
-	return outDir + "/" + filename + "/" + filename + "-" + fileSuffix + ".ts"
+func generatePath(outDir, filename, module, fileSuffix string) string {
+	return outDir + "/" + filename + "/" + filename + "-" + module + "." + fileSuffix
 }
 func generateIndexPath(outDir, filename string) string {
 	return outDir + "/" + filename + "/" + "index.ts"

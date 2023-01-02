@@ -7,16 +7,13 @@ import (
 func Gen(ctx *file_dispatcher.FileContext, packageRoot string) {
 	genTypeMap(ctx)
 
-	tree := ctx.TreeContext
-
 	if ctx.GenProductCommon {
-		ctx.ProductCommon = genCommon(tree, packageRoot)
+		ctx.ProductCommon = genCommon(ctx, packageRoot)
 	}
-
 	if ctx.GenProductServer {
-		ctx.ProductServer = genServer(tree, packageRoot)
+		ctx.ProductServer = genServer(ctx, packageRoot)
 	}
 	if ctx.GenProductClient {
-		ctx.ProductClient = genClient(tree, packageRoot)
+		ctx.ProductClient = genClient(ctx, packageRoot)
 	}
 }

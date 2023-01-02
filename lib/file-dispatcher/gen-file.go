@@ -4,13 +4,10 @@ import "errors"
 
 func (dispatcher *FileDispatcher) GenFile(outDir string) error {
 	if dispatcher.Lang == "ts" {
-		err := dispatcher.GenerateTypescript(outDir)
-		if err != nil {
-			return err
-		}
+		return dispatcher.GenerateTypescript(outDir)
+	} else if dispatcher.Lang == "go" {
+		return dispatcher.GenerateGo(outDir)
 	} else {
 		return errors.New("暂不支持的语言类型:" + dispatcher.Lang)
 	}
-
-	return nil
 }

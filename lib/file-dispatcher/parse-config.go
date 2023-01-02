@@ -17,7 +17,7 @@ func (dispatcher *FileDispatcher) ParseConfig(configCtx config_dispatcher.Config
 		if path.IsAbs(filePath) {
 			absPath = filePath
 		} else {
-			absPath = path.Clean(dispatcher.PackageRoot + `/` + filePath)
+			absPath = path.Clean(dispatcher.ProjectRoot + `/` + filePath)
 		}
 		fileCtx, err := dispatcher.ParseFile(absPath, "")
 		if err != nil {

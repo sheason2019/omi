@@ -26,7 +26,7 @@ func GenCode(configPath string, showLog bool) error {
 	logger.Log("获取配置文件成功：" + configPath)
 
 	// 拿到项目根目录的路径
-	packageRoot := (configPath)[0:strings.LastIndex(configPath, "/")]
+	projectRoot := (configPath)[0:strings.LastIndex(configPath, "/")]
 
 	logger.Log(fmt.Sprintf("配置文件包含的配置项个数：%d", len(configs)))
 
@@ -34,7 +34,7 @@ func GenCode(configPath string, showLog bool) error {
 	// 根据配置文件解析出所有需要用到的语法树
 	for index, config := range configs {
 		dispatcher := file_dispatcher.New()
-		dispatcher.PackageRoot = packageRoot
+		dispatcher.ProjectRoot = projectRoot
 		dispatcher.DefaultMethod = config.Method
 		dispatcher.Lang = config.Lang
 
@@ -54,13 +54,13 @@ func GenCode(configPath string, showLog bool) error {
 		}
 
 		logger.Log(fmt.Sprintf("[%d/%d]正在生成代码内容", index+1, len(configs)))
-		err = codegen.GenCode(dispatcher, dispatcher.Lang)
+		err = codegen.GenCode(dispatcher, &config)
 		if err != nil {
 			return err
 		}
 
 		logger.Log(fmt.Sprintf("[%d/%d]正在创建代码文件", index+1, len(configs)))
-		outDir := path.Clean(packageRoot + "/" + config.TargetDir)
+		outDir := path.Clean(projectRoot + "/" + config.TargetDir)
 		err = dispatcher.GenFile(outDir)
 		if err != nil {
 			return err

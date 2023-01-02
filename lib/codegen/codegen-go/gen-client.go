@@ -1,7 +1,7 @@
 package codegen_go
 
-import tree_builder "github.com/sheason2019/omi/tree-builder"
+import file_dispatcher "github.com/sheason2019/omi/file-dispatcher"
 
-func genClient(tree *tree_builder.TreeContext, packageRoot string) string {
+func genClient(ctx *file_dispatcher.FileContext, packageRoot string) string {
 	return ""
 }

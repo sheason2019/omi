@@ -30,6 +30,10 @@ func genTypeMap(fileCtx *file_dispatcher.FileContext) {
 		Typename:    "",
 		PackageName: "",
 	}
+	typeMap["boolean"] = &typeStruct{
+		Typename:    "bool",
+		PackageName: "",
+	}
 	// 引入类型
 	for _, structDef := range fileCtx.TreeContext.StructMap {
 		if structDef.SourcePath != nil {
@@ -45,7 +49,9 @@ func genTypeMap(fileCtx *file_dispatcher.FileContext) {
 
 func typeTrans(origin string, importCtx *importContext) string {
 	if v, exist := typeMap[origin]; exist {
-		importCtx.AddPackage(v.PackageName)
+		if len(v.PackageName) > 0 {
+			importCtx.AddPackage(v.PackageName)
+		}
 		return v.Typename
 	}
 	return origin

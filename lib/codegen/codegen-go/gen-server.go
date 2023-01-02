@@ -4,18 +4,21 @@ import (
 	"fmt"
 	"strings"
 
+	file_dispatcher "github.com/sheason2019/omi/file-dispatcher"
 	tree_builder "github.com/sheason2019/omi/tree-builder"
 )
 
-func genServer(tree *tree_builder.TreeContext, packageRoot string) string {
+func genServer(ctx *file_dispatcher.FileContext, packageRoot string) string {
 	row := []string{}
+
+	tree := ctx.TreeContext
 	importCtx := importContext{
 		PackageRoot: packageRoot,
 	}
 	importCtx.UsedPackage = make(map[string]bool)
 
 	for _, service := range tree.ServiceMap {
-		str := fmt.Sprintf("type %s interface {", service.Identify.Content)
+		str := fmt.Sprintf("type %s interface {\n", service.Identify.Content)
 		for _, lambda := range service.Lambdas {
 			str = str + genServerLambda(lambda, &importCtx)
 		}
@@ -25,6 +28,8 @@ func genServer(tree *tree_builder.TreeContext, packageRoot string) string {
 	}
 
 	row = append([]string{genImport(&importCtx)}, row...)
+
+	row = append([]string{fmt.Sprintf("package %s\n", ctx.FileName)}, row...)
 
 	return strings.Join(row, "\n")
 }
@@ -41,5 +46,5 @@ func genServerLambda(lambda *tree_builder.LambdaDefine, importCtx *importContext
 		str = str + ` ` + rtnType
 	}
 
-	return str
+	return str + "\n"
 }
