@@ -7,5 +7,8 @@ import (
 )
 
 func TestCodegen(t *testing.T) {
-	executable.GenCode("", true)
+	err := executable.GenCode("", true)
+	if err != nil {
+		t.Error(err)
+	}
 }

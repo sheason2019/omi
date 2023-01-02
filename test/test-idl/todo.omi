@@ -1,0 +1,5 @@
+struct Todo {
+  int Id;
+  string Content;
+  boolean Checked;
+}

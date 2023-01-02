@@ -1,25 +1,25 @@
 [
   {
-    "entry": ["test/test-idl/common.omi", "test/test-idl/todo.omi"],
+    "entry": ["test/test-idl/todo.omi"],
     "lang": "ts",
     "targetDir": "./test/server-ts/idl-lib",
     "method": "server"
   },
   {
-    "entry": ["test/test-idl/common.omi"],
+    "entry": ["test/test-idl/todo.omi"],
     "lang": "ts",
     "targetDir": "./test/client-ts/idl-lib",
     "method": "client"
   },
   {
-    "entry": ["test/test-idl/common.omi"],
+    "entry": ["test/test-idl/todo.omi"],
     "lang": "go",
     "targetDir": "./test/client-go/idl-lib/test",
     "method": "client",
     "packageRoot": "github.com/sheason2019/idl-lib"
   },
   {
-    "entry": ["test/test-idl/common.omi"],
+    "entry": ["test/test-idl/todo.omi"],
     "lang": "go",
     "targetDir": "./test/server-go/idl-lib/test",
     "method": "server",
