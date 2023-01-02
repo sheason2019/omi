@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/sheason2019/omi/checker"
-	codegen_ts "github.com/sheason2019/omi/codegen/codegen-ts"
+	"github.com/sheason2019/omi/codegen"
 	config_dispatcher "github.com/sheason2019/omi/config-dispatcher"
 	file_dispatcher "github.com/sheason2019/omi/file-dispatcher"
 	"github.com/sheason2019/omi/logger"
@@ -36,6 +36,8 @@ func GenCode(configPath string, showLog bool) error {
 		dispatcher := file_dispatcher.New()
 		dispatcher.PackageRoot = packageRoot
 		dispatcher.DefaultMethod = config.Method
+		dispatcher.Lang = config.Lang
+
 		// 通过Config完成对所有相关文件的解析
 		logger.Log(fmt.Sprintf("[%d/%d]正在生成接口信息", index+1, len(configs)))
 		err := dispatcher.ParseConfig(config)
@@ -52,13 +54,14 @@ func GenCode(configPath string, showLog bool) error {
 		}
 
 		logger.Log(fmt.Sprintf("[%d/%d]正在生成代码内容", index+1, len(configs)))
-		for _, fileCtx := range dispatcher.FileStore {
-			codegen_ts.Gen(fileCtx)
+		err = codegen.GenCode(dispatcher, dispatcher.Lang)
+		if err != nil {
+			return err
 		}
 
 		logger.Log(fmt.Sprintf("[%d/%d]正在创建代码文件", index+1, len(configs)))
 		outDir := path.Clean(packageRoot + "/" + config.TargetDir)
-		err = dispatcher.GenerateTypescript(outDir)
+		err = dispatcher.GenFile(outDir)
 		if err != nil {
 			return err
 		}

@@ -9,6 +9,8 @@ type FileDispatcher struct {
 	PackageRoot string
 	// 标注产物的服务对象端，可选项有：client、server、all、common
 	DefaultMethod string
+	// 标注产物的语言类型
+	Lang string
 
 	FileStore     map[string]*FileContext
 	FileUniqueMap map[string]string // file 的名称 - 路径Map，用来保证同一个上下文中生成的每个包名称都是不重复的
@@ -39,5 +41,6 @@ func New() *FileDispatcher {
 	dispatcher := FileDispatcher{}
 	dispatcher.FileStore = make(map[string]*FileContext)
 	dispatcher.FileUniqueMap = make(map[string]string)
+
 	return &dispatcher
 }

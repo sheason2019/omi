@@ -10,7 +10,6 @@ func Gen(ctx *file_dispatcher.FileContext) {
 	if ctx.GenProductCommon {
 		ctx.ProductCommon = genCommon(tree)
 	}
-
 	if ctx.GenProductServer {
 		ctx.ProductServer = genServer(tree)
 	}
