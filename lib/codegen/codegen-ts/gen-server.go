@@ -47,6 +47,10 @@ func genServer(tree *tree_builder.TreeContext) string {
 		row = append(row, def)
 	}
 
+	if len(row) == 0 {
+		return ""
+	}
+
 	row = append([]string{genImport(tree.StructMap, &importCtx)}, row...)
 
 	return strings.Join(row, "\n")

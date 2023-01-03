@@ -27,6 +27,10 @@ func genServer(ctx *file_dispatcher.FileContext, packageRoot string) string {
 		row = append(row, str)
 	}
 
+	if len(row) == 0 {
+		return ""
+	}
+
 	row = append([]string{genImport(&importCtx)}, row...)
 
 	row = append([]string{fmt.Sprintf("package %s\n", ctx.FileName)}, row...)
