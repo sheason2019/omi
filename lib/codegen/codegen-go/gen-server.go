@@ -25,6 +25,7 @@ func genServer(ctx *file_dispatcher.FileContext, packageRoot string) string {
 		str = str + `}`
 
 		row = append(row, str)
+		row = append(row, genDefinition(service))
 	}
 
 	if len(row) == 0 {

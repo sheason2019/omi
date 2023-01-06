@@ -3,3 +3,7 @@ struct Todo {
   string Content;
   boolean Checked;
 }
+
+service TodoService {
+  Todo GetTodo();
+}

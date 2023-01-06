@@ -6,9 +6,9 @@ import (
 	"github.com/sheason2019/omi/executable"
 )
 
-func TestCodegen(t *testing.T) {
+func BenchmarkCodegen(b *testing.B) {
 	err := executable.GenCode("", true)
 	if err != nil {
-		t.Error(err)
+		b.Error(err)
 	}
 }

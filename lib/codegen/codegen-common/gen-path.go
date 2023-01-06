@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	tree_builder "github.com/sheason2019/omi/tree-builder"
+	"github.com/sheason2019/omi/utils"
 )
 
 func GenPath(service *tree_builder.ServiceDefine, lambda *tree_builder.LambdaDefine) string {
@@ -15,6 +16,19 @@ func GenPath(service *tree_builder.ServiceDefine, lambda *tree_builder.LambdaDef
 		endpoint = lambda.Identify.Content[len(method):]
 	}
 	return "/" + service.Identify.Content + "." + endpoint
+}
+
+func GenPathName(lambda *tree_builder.LambdaDefine) string {
+	pathName := utils.ToUpperSnake(lambda.Identify.Content)
+	var methods = []string{"GET_", "POST_", "PUT_", "DELETE_", "PATCH_"}
+	for _, method := range methods {
+		if strings.Index(pathName, method) == 0 {
+			pathName = pathName[len(method):]
+			break
+		}
+	}
+
+	return pathName + "_PATH"
 }
 
 // 当Identify与所有的Method都不匹配时（如Login、Regist等），getMethod默认返回Post
