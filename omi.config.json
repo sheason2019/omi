@@ -12,14 +12,14 @@
     "method": "client"
   },
   {
-    "entry": ["test/test-idl/todo.omi"],
+    "entry": ["test/test-idl/todo.omi", "test/test-idl/user.omi"],
     "lang": "go",
     "targetDir": "./test/client-go/idl-lib",
     "method": "client",
     "packageRoot": "github.com/sheason2019/idl-lib"
   },
   {
-    "entry": ["test/test-idl/todo.omi"],
+    "entry": ["test/test-idl/todo.omi", "test/test-idl/user.omi"],
     "lang": "go",
     "targetDir": "./test/server-go/idl-lib",
     "method": "server",

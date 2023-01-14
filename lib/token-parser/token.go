@@ -24,7 +24,7 @@ func rowParser(ctx *parseContext, rowStr string, rowIndex uint) []TokenStruct {
 				ctx.QuoteMethod = false
 			}
 			if !ctx.QuoteMethod {
-				flushBuf(buf, rowIndex, i, &tokens)
+				flushBuf(buf, rowIndex, i+1, &tokens)
 				tokens[len(tokens)-1].TokenType = "string"
 			}
 			continue

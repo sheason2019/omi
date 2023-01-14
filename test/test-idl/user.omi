@@ -1,0 +1,11 @@
+import { Todo } from "./todo.omi";
+
+struct User {
+  int id;
+}
+
+service UserTask {
+  Todo GetUserTask(User usr);
+  void PostUserTask(Todo todo);
+}
+

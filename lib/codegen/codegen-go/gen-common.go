@@ -19,6 +19,7 @@ func genCommon(ctx *file_dispatcher.FileContext, packageRoot string) string {
 		PackageRoot: packageRoot,
 	}
 	importCtx.UsedPackage = make(map[string]bool)
+	importCtx.UsedDeps = map[string]bool{}
 
 	for _, item := range tree.StructMap {
 		// 这里的循环逻辑主要用来生成本地定义的结构体，因此要略过导入的结构体
@@ -56,7 +57,7 @@ func variableRepeated(variable *tree_builder.VariableDefine) string {
 }
 
 func genImport(importCtx *importContext) string {
-	if len(importCtx.UsedPackage) == 0 {
+	if len(importCtx.UsedPackage) == 0 && len(importCtx.UsedDeps) == 0 {
 		return ""
 	}
 
@@ -67,6 +68,12 @@ func genImport(importCtx *importContext) string {
 			row = append(row, fmt.Sprintf("%s \"%s/%s\"", pkgName, importCtx.PackageRoot, pkgName))
 		}
 	}
+	for dep := range importCtx.UsedDeps {
+		if len(dep) > 0 {
+			row = append(row, dep)
+		}
+	}
+
 	row = append(row, ")")
 	return strings.Join(row, "\n")
 }

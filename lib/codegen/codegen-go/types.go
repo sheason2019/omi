@@ -4,8 +4,11 @@ type importContext struct {
 	PackageRoot string
 
 	UsedPackage map[string]bool
+	UsedDeps    map[string]bool
 }
 
 func (importCtx *importContext) AddPackage(packageName string) {
-	importCtx.UsedPackage[packageName] = true
+	if len(packageName) > 0 {
+		importCtx.UsedPackage[packageName] = true
+	}
 }

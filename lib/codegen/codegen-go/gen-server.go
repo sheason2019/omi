@@ -16,6 +16,9 @@ func genServer(ctx *file_dispatcher.FileContext, packageRoot string) string {
 		PackageRoot: packageRoot,
 	}
 	importCtx.UsedPackage = make(map[string]bool)
+	importCtx.UsedDeps = map[string]bool{
+		"\"github.com/gin-gonic/gin\"": true,
+	}
 
 	for _, service := range tree.ServiceMap {
 		str := fmt.Sprintf("type %s interface {\n", service.Identify.Content)
@@ -40,9 +43,9 @@ func genServer(ctx *file_dispatcher.FileContext, packageRoot string) string {
 }
 
 func genServerLambda(lambda *tree_builder.LambdaDefine, importCtx *importContext) string {
-	str := fmt.Sprintf("%s(", lambda.Identify.Content)
+	str := fmt.Sprintf("%s(ctx *gin.Context", lambda.Identify.Content)
 	if lambda.ArgType != nil {
-		str = str + fmt.Sprintf("%s %s", lambda.ArgName.Content, typeTrans(lambda.ArgType.Content, importCtx))
+		str = str + fmt.Sprintf(", %s %s", lambda.ArgName.Content, typeTrans(lambda.ArgType.Content, importCtx))
 	}
 	str = str + `)`
 
