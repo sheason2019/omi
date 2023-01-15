@@ -9,6 +9,7 @@ import (
 	config_dispatcher "github.com/sheason2019/omi/config-dispatcher"
 	token_parser "github.com/sheason2019/omi/token-parser"
 	tree_builder "github.com/sheason2019/omi/tree-builder"
+	"github.com/sheason2019/omi/utils"
 )
 
 func (dispatcher *FileDispatcher) ParseConfig(configCtx config_dispatcher.ConfigContext) error {
@@ -19,11 +20,32 @@ func (dispatcher *FileDispatcher) ParseConfig(configCtx config_dispatcher.Config
 		} else {
 			absPath = path.Clean(dispatcher.ProjectRoot + `/` + filePath)
 		}
-		fileCtx, err := dispatcher.ParseFile(absPath, "")
-		if err != nil {
-			return err
+
+		// 判断路径是否存在
+		isDir, exist := utils.PathType(absPath)
+		if !exist {
+			fmt.Printf("读取路径失败: %s", absPath)
+			continue
 		}
-		fileCtx.updateGenTargetByMethod(dispatcher.DefaultMethod)
+
+		filePathList := []string{}
+		if isDir {
+			fps, err := utils.GetOmiFilesPath(absPath)
+			if err != nil {
+				return err
+			}
+			filePathList = fps
+		} else {
+			filePathList = append(filePathList, absPath)
+		}
+
+		for _, fp := range filePathList {
+			fileCtx, err := dispatcher.ParseFile(fp, "")
+			if err != nil {
+				return err
+			}
+			fileCtx.updateGenTargetByMethod(dispatcher.DefaultMethod)
+		}
 	}
 
 	return nil

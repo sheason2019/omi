@@ -19,7 +19,7 @@
     "packageRoot": "github.com/sheason2019/idl-lib"
   },
   {
-    "entry": ["test/test-idl/todo.omi", "test/test-idl/user.omi"],
+    "entry": ["test/test-idl"],
     "lang": "go",
     "targetDir": "./test/server-go/idl-lib",
     "method": "server",
