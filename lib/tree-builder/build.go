@@ -22,6 +22,7 @@ func Build(tokens *[]token_parser.TokenStruct) *TreeContext {
 		token := tokenStream.Read()
 		// 现在不为产物生成注释信息
 		if token.TokenType == "comment" {
+			tokenStream.NextUseful()
 			continue
 		}
 		keyword, err := fetchKeyword(token)

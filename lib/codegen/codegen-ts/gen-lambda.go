@@ -25,8 +25,8 @@ func genLambda(lambda *tree_builder.LambdaDefine, service *tree_builder.ServiceD
 	lambdaPath := codegen_common.GenPath(service, lambda)
 	if method == "Get" || method == "Delete" {
 		str = str + "return this.ins." + strings.ToLower(method) +
-			fmt.Sprintf("<%s>(this.host + \"%s\"", lambda.RtnType.Content, lambdaPath)
-		importCtx.AddStruct(lambda.RtnType.Content)
+			fmt.Sprintf("<%s>(this.host + \"%s\"", typeTrans(lambda.RtnType.Content), lambdaPath)
+		importCtx.AddStruct(typeTrans(lambda.RtnType.Content))
 		if lambda.ArgType == nil {
 			str = str + `);`
 		} else {
@@ -34,8 +34,8 @@ func genLambda(lambda *tree_builder.LambdaDefine, service *tree_builder.ServiceD
 		}
 	} else {
 		str = str + "return this.ins." + strings.ToLower(method) +
-			fmt.Sprintf("<%s>(this.host + \"%s\"", lambda.RtnType.Content, lambdaPath)
-		importCtx.AddStruct(lambda.RtnType.Content)
+			fmt.Sprintf("<%s>(this.host + \"%s\"", typeTrans(lambda.RtnType.Content), lambdaPath)
+		importCtx.AddStruct(typeTrans(lambda.RtnType.Content))
 		if lambda.ArgType == nil {
 			str = str + `);`
 		} else {
