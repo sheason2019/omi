@@ -6,6 +6,7 @@ import (
 
 	file_dispatcher "github.com/sheason2019/omi/file-dispatcher"
 	tree_builder "github.com/sheason2019/omi/tree-builder"
+	"github.com/sheason2019/omi/utils"
 )
 
 // 处理公共的代码生成
@@ -32,7 +33,11 @@ func genCommon(ctx *file_dispatcher.FileContext, packageRoot string) string {
 			if i == 0 {
 				str = str + "\n"
 			}
-			str = str + variable.Identify.Content + ` ` + variableRepeated(variable) + typeTrans(variable.TypeName.Content, &importCtx) + "\n"
+			str = str +
+				utils.FirstLetterToUpper(variable.Identify.Content) + ` ` +
+				variableRepeated(variable) +
+				typeTrans(variable.TypeName.Content, &importCtx) +
+				fmt.Sprintf(" `json:\"%s\"`\n", variable.Identify.Content)
 		}
 		str = str + "}\n"
 		row = append(row, str)
