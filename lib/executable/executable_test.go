@@ -12,3 +12,10 @@ func BenchmarkCodegen(b *testing.B) {
 		b.Error(err)
 	}
 }
+
+func BenchmarkSyncRemote(b *testing.B) {
+	err := executable.SyncRemote("")
+	if err != nil {
+		b.Error(err)
+	}
+}

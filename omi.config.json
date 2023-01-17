@@ -1,28 +1,35 @@
-[
-  {
-    "entry": ["test/test-idl/todo.omi"],
-    "lang": "ts",
-    "targetDir": "./test/server-ts/idl-lib",
-    "method": "server"
+{
+  "remote": {
+    "repository": "https://github.com/sheason2019/mono-ci-demo",
+    "branch": "master",
+    "outDir": "./idl-repo"
   },
-  {
-    "entry": ["test/test-idl/todo.omi"],
-    "lang": "ts",
-    "targetDir": "./test/client-ts/idl-lib",
-    "method": "client"
-  },
-  {
-    "entry": ["test/test-idl/todo.omi", "test/test-idl/user.omi"],
-    "lang": "go",
-    "targetDir": "./test/client-go/idl-lib",
-    "method": "client",
-    "packageRoot": "github.com/sheason2019/idl-lib"
-  },
-  {
-    "entry": ["test/test-idl"],
-    "lang": "go",
-    "targetDir": "./test/server-go/idl-lib",
-    "method": "server",
-    "packageRoot": "github.com/sheason2019/idl-lib"
-  }
-]
+  "configs": [
+    {
+      "entry": ["test/test-idl/todo.omi"],
+      "lang": "ts",
+      "targetDir": "./test/server-ts/idl-lib",
+      "method": "server"
+    },
+    {
+      "entry": ["test/test-idl/todo.omi"],
+      "lang": "ts",
+      "targetDir": "./test/client-ts/idl-lib",
+      "method": "client"
+    },
+    {
+      "entry": ["test/test-idl/todo.omi", "test/test-idl/user.omi"],
+      "lang": "go",
+      "targetDir": "./test/client-go/idl-lib",
+      "method": "client",
+      "packageRoot": "github.com/sheason2019/idl-lib"
+    },
+    {
+      "entry": ["test/test-idl"],
+      "lang": "go",
+      "targetDir": "./test/server-go/idl-lib",
+      "method": "server",
+      "packageRoot": "github.com/sheason2019/idl-lib"
+    }
+  ]
+}

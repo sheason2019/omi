@@ -5,24 +5,16 @@ import (
 	"os"
 )
 
-func GetConfigs(filePath string) ([]ConfigContext, string, error) {
+func GetConfigContext(filePath string) (*ConfigContext, string, error) {
 	configContent, filePath, err := getConfigInfo(filePath)
 	if err != nil {
 		return nil, "", err
 	}
 
-	// 首先尝试使用单对象初始化Config
-	config := ConfigContext{}
-	err = json.Unmarshal(configContent, &config)
-	if err == nil {
-		return []ConfigContext{config}, filePath, nil
-	}
+	configCtx := ConfigContext{}
+	err = json.Unmarshal(configContent, &configCtx)
 
-	// 若失败则使用数组尝试JSON化
-	configs := []ConfigContext{}
-	err = json.Unmarshal(configContent, &configs)
-
-	return configs, filePath, err
+	return &configCtx, filePath, err
 }
 
 // 根据路径获取Config相关的信息

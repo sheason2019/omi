@@ -57,6 +57,17 @@ func main() {
 
 			return nil
 		},
+		Commands: []*cli.Command{
+			{
+				Name:    "sync",
+				Aliases: []string{},
+				Usage:   "sync remote repo file",
+				Action: func(ctx *cli.Context) error {
+					fp := ctx.String("filePath")
+					return executable.SyncRemote(fp)
+				},
+			},
+		},
 	}
 
 	err := app.Run(os.Args)

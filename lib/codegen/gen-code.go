@@ -9,7 +9,7 @@ import (
 	file_dispatcher "github.com/sheason2019/omi/file-dispatcher"
 )
 
-func GenCode(dispatcher *file_dispatcher.FileDispatcher, config *config_dispatcher.ConfigContext) error {
+func GenCode(dispatcher *file_dispatcher.FileDispatcher, config *config_dispatcher.Config) error {
 	for _, fileCtx := range dispatcher.FileStore {
 		if config.Lang == "ts" {
 			codegen_ts.Gen(fileCtx)

@@ -13,10 +13,12 @@ import (
 )
 
 func GenCode(configPath string, showLog bool) error {
-	configs, configPath, err := config_dispatcher.GetConfigs(configPath)
+	configCtx, configPath, err := config_dispatcher.GetConfigContext(configPath)
 	if err != nil {
-		panic(err)
+		return err
 	}
+
+	configs := configCtx.Configs
 
 	// 拿到项目根目录的路径
 	projectRoot := (configPath)[0:strings.LastIndex(configPath, "/")]

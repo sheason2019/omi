@@ -12,7 +12,7 @@ import (
 	"github.com/sheason2019/omi/utils"
 )
 
-func (dispatcher *FileDispatcher) ParseConfig(configCtx config_dispatcher.ConfigContext) error {
+func (dispatcher *FileDispatcher) ParseConfig(configCtx config_dispatcher.Config) error {
 	for _, filePath := range configCtx.Entry {
 		var absPath string
 		if path.IsAbs(filePath) {
