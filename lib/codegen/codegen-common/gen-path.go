@@ -19,16 +19,7 @@ func GenPath(service *tree_builder.ServiceDefine, lambda *tree_builder.LambdaDef
 }
 
 func GenPathName(lambda *tree_builder.LambdaDefine) string {
-	pathName := utils.ToUpperSnake(lambda.Identify.Content)
-	var methods = []string{"GET_", "POST_", "PUT_", "DELETE_", "PATCH_"}
-	for _, method := range methods {
-		if strings.Index(pathName, method) == 0 {
-			pathName = pathName[len(method):]
-			break
-		}
-	}
-
-	return pathName + "_PATH"
+	return utils.ToUpperSnake(lambda.Identify.Content) + "_PATH"
 }
 
 // 当Identify与所有的Method都不匹配时（如Login、Regist等），getMethod默认返回Post

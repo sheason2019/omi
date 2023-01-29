@@ -37,7 +37,7 @@ func genCommon(ctx *file_dispatcher.FileContext, packageRoot string) string {
 				utils.FirstLetterToUpper(variable.Identify.Content) + ` ` +
 				variableRepeated(variable) +
 				typeTrans(variable.TypeName.Content, &importCtx) +
-				fmt.Sprintf(" `json:\"%s\"`\n", variable.Identify.Content)
+				fmt.Sprintf(" `json:\"%s\" form:\"%s\"`\n", variable.Identify.Content, variable.Identify.Content)
 		}
 		str = str + "}\n"
 		row = append(row, str)
